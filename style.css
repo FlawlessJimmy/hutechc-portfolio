@@ -433,3 +433,8 @@ h2.kr { letter-spacing: -.03em; line-height: 1.22; }
   .og-row { grid-template-columns: 84px 1fr auto; font-size: 13px; gap: 8px; }
   .og-check { grid-template-columns: 8px 92px 1fr; gap: 8px; font-size: 12px; }
 }
+
+/* 첫 화면 제목: g 꼬리가 아래 줄과 겹치지 않도록 줄 사이를 넓힘 */
+.hero-title .line { margin-bottom: -.03em; }
+.hero-title .line:last-child { margin-bottom: -.18em; }
+@media (max-width: 860px) { .nav-links a.nav-od { display: none; } }
