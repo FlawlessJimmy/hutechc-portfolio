@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>브랜드명 — 한 줄 소개</title>
+<meta name="description" content="검색 결과에 보일 한두 문장 소개를 여기에 씁니다.">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<!--
+  홈페이지 시작 틀 (랜딩 1페이지) — 쓰는 법
+  1) 아래 :root 안의 brand 색 한 줄만 바꾸면 전체 색이 바뀝니다.
+  2) 본문의 ②~⑫ 번호 표시마다 글만 바꿉니다.
+  3) 필요 없는 칸은 section 태그 시작부터 끝까지 통째로 지웁니다.
+  4) 영어가 필요 없으면 data-en 속성은 그대로 두거나 지워도 됩니다. (하나도 없으면 EN 버튼이 저절로 사라짐)
+  5) 사진은 class="ph" 칸을 img 태그로 바꿉니다.
+-->
+<style>
+:root{
+  /* ① 색·모양 — 대표 색 한 줄만 바꾸면 나머지는 자동으로 맞춰져요 */
+  --brand:#2f6fed;
+  --brand-dark:color-mix(in srgb,var(--brand) 78%,#000);
+  --brand-soft:color-mix(in srgb,var(--brand) 9%,#fff);
+  --ink:#16191f; --muted:#5e6573; --line:#e6e8ee; --bg:#fff; --bg-2:#f6f7f9;
+  --radius:16px; --max:1120px;
+  --font:Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 var(--font);word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+a{color:inherit}
+:focus-visible{outline:3px solid color-mix(in srgb,var(--brand) 40%,transparent);outline-offset:2px}
+.container{max-width:var(--max);margin:0 auto;padding:0 16px}
+section{padding:72px 0;scroll-margin-top:64px}
+section.alt{background:var(--bg-2)}
+.eyebrow{display:inline-block;font-size:13px;font-weight:800;color:var(--brand);letter-spacing:.04em;margin-bottom:8px}
+h1,h2,h3{line-height:1.3;letter-spacing:-.02em;margin:0}
+h2{font-size:clamp(24px,4vw,34px);margin-bottom:12px}
+.lead{color:var(--muted);font-size:17px;margin:0 0 32px;max-width:640px}
+.center{text-align:center}
+.center .lead{margin-left:auto;margin-right:auto}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:12px 22px;border-radius:12px;font-weight:700;font-size:16px;text-decoration:none;border:1px solid transparent;cursor:pointer;font-family:inherit}
+.btn-main{background:var(--brand);color:#fff}
+.btn-main:hover{background:var(--brand-dark)}
+.btn-line{background:#fff;color:var(--ink);border-color:var(--line)}
+.btn-line:hover{border-color:var(--brand);color:var(--brand)}
+/* 사진 자리(.ph)는 비율 때문에 칸을 넓힐 수 있어서, 2단 칸은 minmax(0,…)로 폭을 묶어 둠 */
+.hero .container,.about,.contact{grid-template-columns:minmax(0,1fr)}
+.ph{display:grid;place-items:center;aspect-ratio:4/3;border-radius:var(--radius);background:linear-gradient(135deg,var(--brand-soft),#fff);border:1px dashed color-mix(in srgb,var(--brand) 35%,#fff);color:var(--muted);font-size:14px;text-align:center;padding:16px}
+
+/* ② 상단 메뉴 */
+.site-header{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.site-header .container{display:flex;align-items:center;gap:12px;height:64px}
+.logo{font-weight:800;font-size:20px;text-decoration:none;letter-spacing:-.02em;display:flex;align-items:center;gap:8px}
+.logo-mark{width:30px;height:30px;border-radius:9px;background:var(--brand);color:#fff;display:grid;place-items:center;font-size:15px}
+.site-nav{margin-left:auto;display:flex;align-items:center;gap:4px}
+.site-nav a{text-decoration:none;padding:8px 12px;border-radius:8px;font-weight:600;font-size:15px;color:var(--muted)}
+.site-nav a:hover{color:var(--ink);background:var(--bg-2)}
+.site-nav .btn{color:#fff;margin-left:8px;min-height:40px;padding:8px 16px;font-size:15px}
+.site-nav .btn:hover{color:#fff;background:var(--brand-dark)}
+.lang-btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;font:700 13px var(--font);color:var(--muted);cursor:pointer;min-height:36px}
+.menu-btn{display:none;border:0;background:none;width:44px;height:44px;border-radius:10px;cursor:pointer;color:var(--ink)}
+.menu-btn svg{width:24px;height:24px;margin:auto}
+@media (max-width:860px){
+  .menu-btn{display:block}
+  .site-nav{display:none;position:absolute;left:0;right:0;top:64px;flex-direction:column;align-items:stretch;background:#fff;border-bottom:1px solid var(--line);padding:8px 16px 16px;box-shadow:0 12px 24px rgba(0,0,0,.06)}
+  .site-nav.open{display:flex}
+  .site-nav a{padding:12px;font-size:16px}
+  .site-nav .btn{margin:8px 0 0}
+  .lang-btn{margin-left:auto}
+}
+
+/* ③ 첫 화면 */
+.hero{padding:56px 0 64px;background:linear-gradient(180deg,var(--brand-soft),#fff)}
+.hero .container{display:grid;gap:36px;align-items:center}
+@media (min-width:861px){.hero .container{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}.hero{padding:88px 0}}
+.hero h1{font-size:clamp(30px,5.4vw,50px);margin-bottom:16px}
+.hero p{font-size:18px;color:var(--muted);margin:0 0 28px}
+.hero-actions{display:flex;flex-wrap:wrap;gap:10px}
+.trust{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:28px;font-size:14px;color:var(--muted)}
+.trust b{color:var(--ink)}
+
+/* ④ 소개 */
+.about{display:grid;gap:32px;align-items:center}
+@media (min-width:861px){.about{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:56px}}
+.about ul{margin:20px 0 0;padding:0;list-style:none;display:grid;gap:10px}
+.about li{display:flex;gap:10px;align-items:flex-start}
+.about li::before{content:"✓";flex:none;width:22px;height:22px;border-radius:50%;background:var(--brand);color:#fff;font-size:12px;font-weight:800;display:grid;place-items:center;margin-top:3px}
+
+/* ⑤ 서비스 */
+.cards{display:grid;gap:16px}
+@media (min-width:700px){.cards{grid-template-columns:repeat(3,1fr)}}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:24px}
+.card .icon{width:44px;height:44px;border-radius:12px;background:var(--brand-soft);color:var(--brand);display:grid;place-items:center;margin-bottom:16px}
+.card .icon svg{width:22px;height:22px}
+.card h3{font-size:19px;margin-bottom:8px}
+.card p{margin:0;color:var(--muted);font-size:15px}
+.card .more{display:inline-block;margin-top:14px;font-weight:700;color:var(--brand);text-decoration:none;font-size:15px}
+
+/* ⑥ 숫자 */
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media (min-width:861px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stat{background:var(--brand);color:#fff;border-radius:var(--radius);padding:22px 18px;text-align:center}
+.stat b{display:block;font-size:clamp(26px,4vw,36px);letter-spacing:-.02em}
+.stat span{font-size:14px;opacity:.9}
+
+/* ⑦ 진행 과정 */
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:12px;counter-reset:s}
+@media (min-width:861px){.steps{grid-template-columns:repeat(4,1fr)}}
+.steps li{counter-increment:s;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:22px}
+.steps li::before{content:"STEP " counter(s);display:block;font-size:12px;font-weight:800;color:var(--brand);letter-spacing:.06em;margin-bottom:8px}
+.steps h3{font-size:18px;margin-bottom:6px}
+.steps p{margin:0;color:var(--muted);font-size:15px}
+
+/* ⑧ 후기 */
+.reviews{display:grid;gap:16px}
+@media (min-width:700px){.reviews{grid-template-columns:repeat(3,1fr)}}
+.review{margin:0;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:24px}
+.review .stars{color:#f5a524;letter-spacing:2px;margin-bottom:10px}
+.review p{margin:0 0 14px}
+.review footer{font-size:14px;color:var(--muted)}
+
+/* ⑨ 자주 묻는 질문 */
+.faq{max-width:760px;margin:0 auto;display:grid;gap:10px}
+.faq details{background:#fff;border:1px solid var(--line);border-radius:12px;padding:0 18px}
+.faq summary{cursor:pointer;font-weight:700;padding:16px 0;list-style:none;display:flex;justify-content:space-between;gap:12px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font-size:22px;line-height:1;color:var(--brand)}
+.faq details[open] summary::after{content:"−"}
+.faq details p{margin:0 0 16px;color:var(--muted)}
+
+/* ⑩ 문의 */
+.contact{display:grid;gap:24px}
+@media (min-width:861px){.contact{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:40px}}
+.form{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:24px}
+.field{display:block;margin-bottom:14px}
+.field>span{display:block;font-size:14px;font-weight:700;margin-bottom:6px}
+.field>span em{color:#e03131;font-style:normal}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px;font:16px/1.5 var(--font);background:#fff;color:var(--ink)}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 18%,transparent)}
+.agree{display:flex;gap:8px;align-items:flex-start;font-size:14px;color:var(--muted);margin:4px 0 18px}
+.agree input{width:18px;height:18px;margin-top:3px;accent-color:var(--brand)}
+.form .btn{width:100%}
+.done{text-align:center;padding:24px 8px}
+.done b{display:block;font-size:20px;margin-bottom:6px}
+.info{display:grid;gap:14px;align-content:start}
+.info dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:10px 16px;font-size:15px}
+.info dt{font-weight:700}
+.info dd{margin:0;color:var(--muted)}
+.info .ph{aspect-ratio:16/10}
+
+/* ⑪ 회사 정보 */
+.site-footer{background:#14171d;color:#aeb4c0;font-size:14px;padding:40px 0 calc(40px + env(safe-area-inset-bottom))}
+.site-footer .logo{color:#fff;margin-bottom:12px}
+.site-footer p{margin:2px 0}
+
+/* ⑫ 휴대폰 아래 고정 버튼 */
+.mobile-cta{display:none}
+@media (max-width:860px){
+  .mobile-cta{display:grid;grid-template-columns:1fr 1.4fr;gap:8px;position:fixed;left:0;right:0;bottom:0;z-index:30;background:#fff;border-top:1px solid var(--line);padding:8px 12px calc(8px + env(safe-area-inset-bottom))}
+  .mobile-cta .btn{min-height:46px;padding:10px}
+  .site-footer{padding-bottom:calc(110px + env(safe-area-inset-bottom))}
+}
+</style>
+</head>
+<body>
+
+<!-- ② 상단 메뉴 -->
+<header class="site-header">
+  <div class="container">
+    <a class="logo" href="#top"><span class="logo-mark">B</span><span data-en="Brand">브랜드명</span></a>
+    <nav class="site-nav" id="site-nav" aria-label="주요 메뉴">
+      <a href="#about" data-en="About">소개</a>
+      <a href="#services" data-en="Services">서비스</a>
+      <a href="#process" data-en="Process">진행 과정</a>
+      <a href="#reviews" data-en="Reviews">후기</a>
+      <a href="#faq" data-en="FAQ">자주 묻는 질문</a>
+      <a class="btn btn-main" href="#contact" data-en="Contact us">상담 신청</a>
+    </nav>
+    <button type="button" class="lang-btn" aria-label="언어 바꾸기">EN</button>
+    <button type="button" class="menu-btn" aria-label="메뉴 열기" aria-expanded="false" aria-controls="site-nav">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- ③ 첫 화면: 무슨 회사인지 + 무엇을 누르면 되는지가 바로 보이게 -->
+<section class="hero">
+  <div class="container">
+    <div>
+      <span class="eyebrow" data-en="WHO WE HELP">어떤 고객을 돕는지 한 단어로</span>
+      <h1 data-en="Our biggest strength,<br>in one clear line">고객이 가장 먼저 알아야 할<br>우리의 장점을 한 줄로</h1>
+      <p data-en="Describe in one or two sentences who you help and what you do for them.">어떤 고객을 위해 무엇을 해 주는지 한두 문장으로 씁니다. 너무 길면 휴대폰에서 첫 화면이 넘쳐요.</p>
+      <div class="hero-actions">
+        <a class="btn btn-main" href="#contact" data-en="Book a free consultation">무료 상담 신청</a>
+        <a class="btn btn-line" href="tel:0200000000" data-en="Call 02-000-0000">전화 02-000-0000</a>
+      </div>
+      <div class="trust">
+        <span data-en="Since <b>2015</b>">since <b>2015</b></span>
+        <span data-en="<b>1,000+</b> clients">고객 <b>1,000+</b></span>
+        <span data-en="Rating <b>4.9</b>">만족도 <b>4.9</b></span>
+      </div>
+    </div>
+    <div class="ph" data-en="Main photo (1200px wide recommended)">대표 사진 자리<br>(가로 1200px 권장)</div>
+  </div>
+</section>
+
+<!-- ④ 소개 -->
+<section id="about">
+  <div class="container about">
+    <div class="ph" data-en="Team / workspace photo">대표자·작업 공간 사진 자리</div>
+    <div>
+      <span class="eyebrow" data-en="ABOUT">소개</span>
+      <h2 data-en="Why customers choose us">우리를 고르는 이유</h2>
+      <p class="lead" data-en="Introduce the company in 2–3 sentences: when it started, who runs it, what it cares about.">언제 시작했는지, 누가 운영하는지, 무엇을 가장 중요하게 여기는지 2~3문장으로 소개합니다.</p>
+      <ul>
+        <li data-en="Strength 1 — something specific a customer can check">장점 1 — 고객이 확인할 수 있는 구체적인 내용</li>
+        <li data-en="Strength 2 — numbers, certificates, experience">장점 2 — 숫자·자격·경력</li>
+        <li data-en="Strength 3 — what makes you different">장점 3 — 다른 곳과 다른 점</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ⑤ 서비스 (카드는 복사해서 늘리거나 지워도 됨) -->
+<section id="services" class="alt">
+  <div class="container">
+    <div class="center">
+      <span class="eyebrow" data-en="SERVICES">서비스</span>
+      <h2 data-en="What we offer">제공하는 서비스</h2>
+      <p class="lead" data-en="One line explaining the services below.">아래 서비스를 한 줄로 설명합니다.</p>
+    </div>
+    <div class="cards">
+      <article class="card">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5Z"/></svg></div>
+        <h3 data-en="Service 1">서비스 1</h3>
+        <p data-en="Who it is for and what they get, in two lines.">누구를 위한 것인지, 무엇을 얻는지 두 줄로.</p>
+        <a class="more" href="#contact" data-en="Ask about this →">문의하기 →</a>
+      </article>
+      <article class="card">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg></div>
+        <h3 data-en="Service 2">서비스 2</h3>
+        <p data-en="Who it is for and what they get, in two lines.">누구를 위한 것인지, 무엇을 얻는지 두 줄로.</p>
+        <a class="more" href="#contact" data-en="Ask about this →">문의하기 →</a>
+      </article>
+      <article class="card">
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></div>
+        <h3 data-en="Service 3">서비스 3</h3>
+        <p data-en="Who it is for and what they get, in two lines.">누구를 위한 것인지, 무엇을 얻는지 두 줄로.</p>
+        <a class="more" href="#contact" data-en="Ask about this →">문의하기 →</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ⑥ 숫자 (근거 있는 숫자만 쓰기) -->
+<section>
+  <div class="container">
+    <div class="stats">
+      <div class="stat"><b>10<small>년</small></b><span data-en="years in business">운영 기간</span></div>
+      <div class="stat"><b>1,000+</b><span data-en="clients">누적 고객</span></div>
+      <div class="stat"><b>98%</b><span data-en="re-booking rate">재이용률</span></div>
+      <div class="stat"><b>24h</b><span data-en="reply time">답변 시간</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ⑦ 진행 과정 -->
+<section id="process" class="alt">
+  <div class="container">
+    <div class="center">
+      <span class="eyebrow" data-en="PROCESS">진행 과정</span>
+      <h2 data-en="How it works">이렇게 진행돼요</h2>
+      <p class="lead" data-en="Show the customer what happens after they contact you.">문의한 뒤 무엇이 일어나는지 고객이 미리 알 수 있게.</p>
+    </div>
+    <ol class="steps">
+      <li><h3 data-en="Contact">문의</h3><p data-en="Leave a request by form or phone.">폼이나 전화로 문의를 남겨요.</p></li>
+      <li><h3 data-en="Consultation">상담</h3><p data-en="We check what you need within a day.">하루 안에 필요한 것을 확인해요.</p></li>
+      <li><h3 data-en="Work">진행</h3><p data-en="We share progress along the way.">중간중간 진행 상황을 알려 드려요.</p></li>
+      <li><h3 data-en="Delivery">완료</h3><p data-en="Final check together, then delivery.">함께 확인한 뒤 마무리해요.</p></li>
+    </ol>
+  </div>
+</section>
+
+<!-- ⑧ 후기 (실제 후기만, 허락받고 쓰기) -->
+<section id="reviews">
+  <div class="container">
+    <div class="center">
+      <span class="eyebrow" data-en="REVIEWS">후기</span>
+      <h2 data-en="What customers say">고객 후기</h2>
+    </div>
+    <div class="reviews">
+      <figure class="review"><div class="stars" aria-label="5점">★★★★★</div><p data-en="A short, real review goes here.">실제 후기를 짧게 옮겨 적습니다.</p><footer data-en="— Customer (initial)">— 고객 이○○ 님</footer></figure>
+      <figure class="review"><div class="stars" aria-label="5점">★★★★★</div><p data-en="A short, real review goes here.">실제 후기를 짧게 옮겨 적습니다.</p><footer data-en="— Customer (initial)">— 고객 박○○ 님</footer></figure>
+      <figure class="review"><div class="stars" aria-label="5점">★★★★★</div><p data-en="A short, real review goes here.">실제 후기를 짧게 옮겨 적습니다.</p><footer data-en="— Customer (initial)">— 고객 최○○ 님</footer></figure>
+    </div>
+  </div>
+</section>
+
+<!-- ⑨ 자주 묻는 질문 -->
+<section id="faq" class="alt">
+  <div class="container">
+    <div class="center">
+      <span class="eyebrow">FAQ</span>
+      <h2 data-en="Frequently asked questions">자주 묻는 질문</h2>
+    </div>
+    <div class="faq">
+      <details><summary data-en="How much does it cost?">비용은 얼마인가요?</summary><p data-en="Explain the pricing basis, or say it depends on the request.">가격 기준을 설명하거나, 요청에 따라 달라진다고 안내합니다.</p></details>
+      <details><summary data-en="How long does it take?">얼마나 걸리나요?</summary><p data-en="Give a typical timeline.">보통 걸리는 기간을 적습니다.</p></details>
+      <details><summary data-en="Can I change or cancel?">변경·취소가 되나요?</summary><p data-en="Explain the change and refund rules.">변경·환불 기준을 적습니다.</p></details>
+      <details><summary data-en="Where are you located?">위치는 어디인가요?</summary><p data-en="Address, parking, nearest station.">주소, 주차, 가까운 역을 적습니다.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ⑩ 문의 -->
+<section id="contact">
+  <div class="container">
+    <span class="eyebrow" data-en="CONTACT">문의</span>
+    <h2 data-en="Get in touch">상담 신청</h2>
+    <p class="lead" data-en="Leave your details and we will get back to you within one business day.">남겨 주시면 영업일 기준 하루 안에 연락드려요.</p>
+    <div class="contact">
+      <div class="form">
+        <form id="contact-form" novalidate>
+          <label class="field"><span><span data-en="Name">이름</span> <em>*</em></span><input name="name" required autocomplete="name" placeholder="홍길동" data-en-ph="Your name"></label>
+          <label class="field"><span><span data-en="Phone">연락처</span> <em>*</em></span><input name="phone" type="tel" required autocomplete="tel" inputmode="tel" placeholder="010-0000-0000" data-en-ph="Phone number"></label>
+          <label class="field"><span data-en="Type of inquiry">문의 종류</span>
+            <select name="type">
+              <option data-en="Service 1">서비스 1</option>
+              <option data-en="Service 2">서비스 2</option>
+              <option data-en="Service 3">서비스 3</option>
+              <option data-en="Other">기타</option>
+            </select></label>
+          <label class="field"><span data-en="Message">내용</span><textarea name="message" rows="4" placeholder="궁금한 점을 자유롭게 적어 주세요." data-en-ph="Tell us what you need."></textarea></label>
+          <label class="agree"><input type="checkbox" name="agree" required><span data-en="I agree to the collection and use of my personal information for this inquiry. (required)">상담을 위한 개인정보 수집·이용에 동의합니다. (필수)</span></label>
+          <button class="btn btn-main" type="submit" data-en="Send">신청하기</button>
+        </form>
+        <div class="done" id="contact-done" hidden>
+          <b data-en="Thank you!">신청이 접수됐어요</b>
+          <span data-en="We will contact you soon.">곧 연락드릴게요. (시작 틀: 실제 발송은 서버 연결 후)</span>
+        </div>
+      </div>
+      <div class="info">
+        <dl>
+          <dt data-en="Phone">전화</dt><dd><a href="tel:0200000000">02-000-0000</a></dd>
+          <dt data-en="Email">이메일</dt><dd><a href="mailto:hello@example.com">hello@example.com</a></dd>
+          <dt data-en="Hours">운영 시간</dt><dd data-en="Weekdays 10:00–19:00">평일 10:00–19:00</dd>
+          <dt data-en="Address">주소</dt><dd data-en="Address goes here">주소를 여기에 적습니다</dd>
+        </dl>
+        <div class="ph" data-en="Map (paste a map embed here)">지도 자리 (지도 퍼가기 코드를 넣는 곳)</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ⑪ 회사 정보 -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="logo"><span class="logo-mark">B</span><span data-en="Brand">브랜드명</span></div>
+    <p data-en="Company name · CEO name · Business registration no. 000-00-00000">상호 ○○○ · 대표 ○○○ · 사업자등록번호 000-00-00000</p>
+    <p data-en="Address goes here · 02-000-0000">주소를 여기에 적습니다 · 02-000-0000</p>
+    <p>© <span id="year"></span> Brand. All rights reserved.</p>
+  </div>
+</footer>
+
+<!-- ⑫ 휴대폰 아래 고정 버튼 -->
+<div class="mobile-cta">
+  <a class="btn btn-line" href="tel:0200000000" data-en="Call">전화하기</a>
+  <a class="btn btn-main" href="#contact" data-en="Book a consultation">상담 신청</a>
+</div>
+
+<script>
+// 휴대폰 메뉴 열고 닫기
+const menuBtn = document.querySelector('.menu-btn');
+const nav = document.getElementById('site-nav');
+menuBtn.addEventListener('click', () => {
+  const open = nav.classList.toggle('open');
+  menuBtn.setAttribute('aria-expanded', open);
+});
+nav.addEventListener('click', e => {
+  if (e.target.closest('a')) { nav.classList.remove('open'); menuBtn.setAttribute('aria-expanded', 'false'); }
+});
+
+// 한/영 바꾸기: data-en 이 붙은 글만 바뀜 (하나도 없으면 버튼 숨김)
+const langBtn = document.querySelector('.lang-btn');
+const textEls = [...document.querySelectorAll('[data-en]')];
+const phEls = [...document.querySelectorAll('[data-en-ph]')];
+if (!textEls.length) {
+  langBtn.remove();
+} else {
+  textEls.forEach(el => { el.dataset.ko = el.innerHTML; });
+  phEls.forEach(el => { el.dataset.koPh = el.placeholder; });
+  let lang = 'ko';
+  langBtn.addEventListener('click', () => {
+    lang = lang === 'ko' ? 'en' : 'ko';
+    document.documentElement.lang = lang;
+    textEls.forEach(el => { el.innerHTML = lang === 'en' ? el.dataset.en : el.dataset.ko; });
+    phEls.forEach(el => { el.placeholder = lang === 'en' ? el.dataset.enPh : el.dataset.koPh; });
+    langBtn.textContent = lang === 'en' ? '한국어' : 'EN';
+  });
+}
+
+// 문의 폼: 지금은 화면에만 '접수됨' 표시
+// 실제로 보내려면 이 자리에서 서버·구글시트·이메일 서비스로 전송
+const form = document.getElementById('contact-form');
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  if (!form.reportValidity()) return;
+  form.hidden = true;
+  document.getElementById('contact-done').hidden = false;
+});
+
+document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>

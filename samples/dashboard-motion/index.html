@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Flow — 대시보드 모션</title><link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="app">
+<aside class="sidebar"><a class="brand" href="#dashboard"><span class="brand-icon">f</span> flow<span class="brand-dot">.</span></a><p class="workspace">WORKSPACE <span>개인 공간</span></p>
+<nav aria-label="메인 메뉴">
+<button data-page="dashboard" class="nav-item active"><span>◫</span> 대시보드</button>
+<button data-page="board" class="nav-item"><span>▤</span> 작업 보드 <b id="task-count">8</b></button>
+<button data-page="team" class="nav-item"><span>♧</span> 팀</button>
+<button data-page="calendar" class="nav-item"><span>▦</span> 캘린더</button>
+<button data-page="analytics" class="nav-item"><span>⌁</span> 분석</button>
+</nav><div class="sidebar-note"><span class="live-dot"></span> 작게 움직이고,<br>자연스럽게 연결됩니다.<small>INTERACTIVE MOTION DEMO</small></div><div class="me"><span class="avatar">JS</span><div>나의 워크스페이스<small>프로젝트 관리자</small></div></div></aside>
+<div class="main-shell"><header class="topbar"><span>워크스페이스 <i>/</i> <span id="breadcrumb">대시보드</span></span><div><span class="demo-badge">LIVE DEMO</span><span class="avatar small">JS</span></div></header>
+<main id="main" tabindex="-1"></main><footer>FLOW / MOTION STUDY <span>직접 눌러보고, 옮겨보세요.</span></footer></div>
+</div>
+<div id="overlay" class="overlay" hidden></div>
+<section id="modal" class="dialog modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden><button class="close" data-close aria-label="닫기">×</button><span class="eyebrow">NEW PROJECT</span><h2 id="modal-title">새로운 시작을 만들어보세요.</h2><p>프로젝트를 추가하면 대시보드 지표에 반영됩니다.</p><form id="project-form"><label>프로젝트 이름<input id="project-name" name="name" required maxlength="60" placeholder="예: 브랜드 웹사이트 리뉴얼" autocomplete="off"></label><label>마감일<input name="date" type="date" required></label><div class="form-actions"><button type="button" class="btn" data-close>취소</button><button class="btn primary" type="submit">프로젝트 추가 ↗</button></div></form></section>
+<section id="drawer" class="dialog drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" hidden></section>
+<div id="announcer" class="sr-only" role="status" aria-live="polite"></div><div id="toast" class="toast" role="status"></div>
+<script src="app.js"></script>
+</body></html>

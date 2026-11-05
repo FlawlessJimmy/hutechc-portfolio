@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ko" class="is-loading">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>심녕호 · 포트폴리오 (휴텍씨 면접)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=10" />
+  <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js" } }</script>
+</head>
+<body>
+
+  <div class="loader">
+    <div class="loader-count"><span class="num">0</span><span class="pct">%</span></div>
+    <div class="loader-bar"><i></i></div>
+    <div class="loader-label">심녕호 · Web Project Portfolio</div>
+  </div>
+
+  <div class="cursor"><span></span></div>
+  <div class="cursor-dot"></div>
+  <canvas id="webgl"></canvas>
+  <div class="progress"></div>
+
+  <header class="nav">
+    <a href="#top" class="logo" data-magnetic>Nyeongho<b>Sim</b></a>
+    <nav class="nav-links">
+      <a href="#work" data-magnetic>Work</a>
+      <a href="#samples" data-magnetic>Samples</a>
+      <a href="#ondevice" class="nav-od" data-magnetic>On-device</a>
+      <a href="#fit" data-magnetic>Fit</a>
+      <a href="#contact" data-magnetic>Contact</a>
+    </nav>
+    <span class="nav-status"><i></i>For HUTECHC · 2026</span>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero" id="top">
+      <p class="hero-eyebrow">Web Project · Product Designer · 심녕호</p>
+      <h1 class="hero-title">
+        <span class="line">Plan.</span>
+        <span class="line">Design.</span>
+        <span class="line accent">Build.</span>
+      </h1>
+      <div class="hero-bottom">
+        <p class="hero-sub kr">홈페이지 기획부터 디자인, 구현, 운영까지 직접 맡습니다.<br />AI 코딩 도구로 빠르게 만들고, 운영 데이터로 검증합니다.</p>
+        <div class="hero-scroll"><span>Scroll</span><i></i></div>
+      </div>
+    </section>
+
+    <!-- MARQUEE -->
+    <section class="marquee" aria-hidden="true">
+      <div class="marquee-row"><div class="marquee-track">
+        <span>Homepage</span><em>✦</em><span>Admin System</span><em>✦</em><span>Commerce</span><em>✦</em><span>AI</span><em>✦</em>
+        <span>Homepage</span><em>✦</em><span>Admin System</span><em>✦</em><span>Commerce</span><em>✦</em><span>AI</span><em>✦</em>
+      </div></div>
+      <div class="marquee-row outline"><div class="marquee-track">
+        <span>Plan</span><em>✦</em><span>Design</span><em>✦</em><span>Build</span><em>✦</em><span>Operate</span><em>✦</em>
+        <span>Plan</span><em>✦</em><span>Design</span><em>✦</em><span>Build</span><em>✦</em><span>Operate</span><em>✦</em>
+      </div></div>
+    </section>
+
+    <!-- ABOUT -->
+    <section class="manifesto">
+      <p class="eyebrow" data-reveal>About</p>
+      <p class="manifesto-text kr">홈페이지와 업무 시스템을 <span class="hl">기획, 디자인, 구현, 운영</span>까지 한 사람이 맡아 왔습니다. AI 코딩 도구로 빠르게 만들고, <span class="hl">운영 데이터로 검증</span>합니다.</p>
+      <div class="about-meta">
+        <div data-reveal><small>Now · 2026 —</small><b class="kr">프리랜서</b><p class="kr">H2B 운영 대시보드 · KANTO 발주 자동화 · 묘향가 자사몰</p></div>
+        <div data-reveal><small>Before · 2024 — 2025</small><b>EarthMera, New York</b><p class="kr">Lead Product Designer · 앱, 이벤트 플랫폼, 링크인바이오 3개 프로덕트 설계</p></div>
+        <div data-reveal><small>Stack</small><b>Plan → Ship</b><p>Figma · Claude Code · FastAPI · PostgreSQL · Cloudflare · Cafe24</p></div>
+      </div>
+    </section>
+
+    <!-- WORK : 가로 스크롤 -->
+    <section class="work" id="work">
+      <div class="work-track">
+        <div class="work-intro">
+          <p class="eyebrow">Selected Work</p>
+          <h2>Selected<br />Work.</h2>
+          <p class="kr muted">카드 속 화면은 스크롤에 맞춰 움직입니다.<br />실제 운영 화면이며, 고객 이름과 번호는 가렸습니다.</p>
+        </div>
+
+        <article class="project" data-cursor="View" style="--c1:#74abff;--c2:#1a3260">
+          <div class="browser">
+            <div class="browser-bar"><i></i><i></i><i></i><span class="url">H2B 운영 대시보드</span><a class="site-link" href="https://h2b-3cr.pages.dev" target="_blank" rel="noopener" data-cursor="Open">사이트 열기 <span>↗</span></a></div>
+            <div class="viewport slides">
+              <figure class="slide" data-cap="대시보드 홈 · 실시간 KPI" style="--fx:20%;--fy:25%"><img src="shots/h2b-home.jpg" alt="H2B 대시보드 홈 화면" /></figure>
+              <figure class="slide" data-cap="AS 처리 · 입고 스캔과 칸반" style="--fx:35%;--fy:75%"><img src="shots/h2b-as.jpg" alt="H2B AS 처리 화면" /></figure>
+              <figure class="slide" data-cap="판매 분석 · 매출과 순이익 추이" style="--fx:50%;--fy:40%"><img src="shots/h2b-sales.jpg" alt="H2B 판매 분석 화면" /></figure>
+              <div class="slide-ui"><span class="slide-dots"></span><span class="slide-cap kr"></span></div>
+            </div>
+          </div>
+          <div class="project-meta">
+            <span class="p-num">01</span>
+            <div>
+              <h3>H2B 운영 대시보드</h3>
+              <p class="kr">AS 칸반 · 실시간 상담 큐와 AI 자동답장 · 네이버·쿠팡 매출 연동 · 원가·순이익 계산</p>
+              <div class="chips"><span>FastAPI</span><span>PostgreSQL</span><span>Railway</span><span>Cloudflare Pages</span></div>
+            </div>
+            <span class="p-year">2026</span>
+          </div>
+        </article>
+
+        <article class="project" data-cursor="View" style="--c1:#b9a1ff;--c2:#35265f">
+          <div class="browser">
+            <div class="browser-bar"><i></i><i></i><i></i><span class="url">KANTO 발주 대시보드</span><a class="site-link" href="https://kanto-order-server.pages.dev" target="_blank" rel="noopener" data-cursor="Open">사이트 열기 <span>↗</span></a></div>
+            <div class="viewport slides wide">
+              <figure class="slide" data-cap="접근코드 입장 화면" style="--fx:30%;--fy:80%"><img src="shots/kanto-login.jpg" alt="KANTO 입장 화면" /></figure>
+              <figure class="slide" data-cap="발주 → 통합 주문서 · 자동 매칭" style="--fx:30%;--fy:45%"><img src="shots/kanto-order.jpg" alt="KANTO 발주 통합 주문서 화면" /></figure>
+              <figure class="slide" data-cap="현황판 · 인사이트와 물품 흐름" style="--fx:50%;--fy:30%"><img src="shots/kanto-status.jpg" alt="KANTO 현황판 화면" /></figure>
+              <figure class="slide" data-cap="월간 리포트 · 카테고리와 상품 TOP" style="--fx:70%;--fy:40%"><img src="shots/kanto-report.jpg" alt="KANTO 월간 리포트 화면" /></figure>
+              <div class="slide-ui"><span class="slide-dots"></span><span class="slide-cap kr"></span></div>
+            </div>
+          </div>
+          <div class="project-meta">
+            <span class="p-num">02</span>
+            <div>
+              <h3>KANTO 발주 자동화</h3>
+              <p class="kr">엑셀 수작업 대조를 웹 흐름으로 전환 · 매칭 신뢰도 5단계 · 자동 매칭률 98% · 월간 리포트 85초 → 4초</p>
+              <div class="chips"><span>Web App</span><span>Excel 변환</span><span>Cloudflare Pages</span></div>
+            </div>
+            <span class="p-year">2026</span>
+          </div>
+        </article>
+
+        <article class="project" data-cursor="Visit" style="--c1:#d8a35a;--c2:#3c5a3a">
+          <div class="browser">
+            <div class="browser-bar"><i></i><i></i><i></i><span class="url">maoxga.com</span><a class="site-link" href="https://www.maoxga.com/" target="_blank" rel="noopener" data-cursor="Open">사이트 열기 <span>↗</span></a></div>
+            <div class="viewport"><img class="shot" src="shots/maoxga-desktop.jpg" alt="묘향가 자사몰 첫 화면부터 아래까지" /></div>
+          </div>
+          <div class="project-meta">
+            <span class="p-num">03</span>
+            <div>
+              <h3>묘향가 자사몰 리뉴얼</h3>
+              <p class="kr">카페24 자사몰 전면 개편 · 모바일 우선 · 회원·장바구니·네이버페이·실시간 상담 위젯</p>
+              <div class="chips"><span>Cafe24</span><span>HTML · CSS · JS</span><span>Meta Pixel</span></div>
+            </div>
+            <span class="p-year">2026</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- STORE : 고정된 폰 + 모바일 화면 스크롤 -->
+    <section class="showcase">
+      <div class="showcase-inner">
+        <div class="showcase-copy">
+          <p class="eyebrow">Case · 묘향가 자사몰</p>
+          <h2 class="kr">카페24 자사몰 리뉴얼,<br />모바일 우선 설계.</h2>
+          <ol class="steps">
+            <li class="step is-active"><span class="step-num">01</span><div><b class="kr">로그인 · 회원가입</b><p class="kr">휴대폰 375px 너비에서 먼저 확인하고 데스크톱으로 넓혔습니다.</p></div></li>
+            <li class="step"><span class="step-num">02</span><div><b class="kr">장바구니 · 구매바 · 네이버페이</b><p class="kr">상품상세 하단 구매바에서 바로 결제까지 이어집니다.</p></div></li>
+            <li class="step"><span class="step-num">03</span><div><b class="kr">브랜드 페이지 · 홈 배너</b><p class="kr">브랜드 소개와 배너 슬라이더로 첫 화면을 구성했습니다.</p></div></li>
+            <li class="step"><span class="step-num">04</span><div><b class="kr">실시간 상담 위젯</b><p class="kr">상담 답변이 등록되면 이메일로 알림이 갑니다.</p></div></li>
+            <li class="step"><span class="step-num">05</span><div><b class="kr">메타 픽셀 · 회원 특가몰</b><p class="kr">광고 성과 측정과 회원 전용 특가 페이지를 붙였습니다.</p></div></li>
+          </ol>
+          <a class="text-link" href="https://www.maoxga.com/" target="_blank" rel="noopener" data-magnetic data-cursor="Visit">사이트 열기 <span>↗</span></a>
+        </div>
+        <div class="phone-wrap">
+          <div class="phone"><div class="screen">
+            <img class="phone-shot" src="shots/maoxga-mobile.jpg" alt="묘향가 모바일 화면" />
+            <img class="phone-alt alt-chat" src="shots/maoxga-chat.jpg" alt="묘향가 실시간 상담 위젯을 연 화면" />
+            <img class="phone-alt alt-special" src="shots/maoxga-special.jpg" alt="묘향가 회원 특가몰 화면" />
+          </div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- OPERATION : 운영하며 고친 문제 -->
+    <section class="ops">
+      <div class="sec-head">
+        <p class="eyebrow" data-reveal>Operation</p>
+        <h2 class="kr" data-reveal>운영하며 직접 찾고 고친 문제.</h2>
+        <p class="kr muted" data-reveal>AI와 함께 설계·구현하고, 실제 운영 중 생긴 장애의 원인을 찾아 고쳤습니다.</p>
+      </div>
+      <div class="ops-grid">
+        <article class="ops-card">
+          <span class="ops-tag kr">H2B · 대시보드 응답</span>
+          <h3 class="kr">DB 인덱스 원인 파악</h3>
+          <div class="ops-num"><strong data-from="25" data-to="1.4" data-unit="초">25초</strong><small class="kr">이전 25초</small></div>
+          <div class="ops-bars"><i class="before"></i><i class="after" style="--r:.056"></i></div>
+        </article>
+        <article class="ops-card">
+          <span class="ops-tag kr">H2B · 재고 화면</span>
+          <h3 class="kr">저장본 먼저, 최신화는 뒤에서</h3>
+          <div class="ops-num"><strong data-from="11.6" data-to="0" data-unit="초" data-end="즉시">11.6초</strong><small class="kr">이전 11.6초</small></div>
+          <div class="ops-bars"><i class="before"></i><i class="after" style="--r:.02"></i></div>
+        </article>
+        <article class="ops-card">
+          <span class="ops-tag kr">H2B · 주문 목록</span>
+          <h3 class="kr">300건에서 잘리던 목록</h3>
+          <div class="ops-num"><strong class="kr">전체 표시</strong><small class="kr">페이지 넘김 처리로 해결</small></div>
+        </article>
+        <article class="ops-card">
+          <span class="ops-tag kr">H2B · 매출 집계</span>
+          <h3 class="kr">실패 응답이 0원으로 저장</h3>
+          <div class="ops-num"><strong class="kr">재발 방지</strong><small class="kr">원인 수정 · 실패 응답 캐시 차단</small></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- SAMPLES : 쌓이는 카드 -->
+    <section class="samples" id="samples">
+      <div class="sec-head">
+        <p class="eyebrow" data-reveal>For HUTECHC</p>
+        <h2 class="kr" data-reveal>공고에 맞춰 준비한 샘플 3개.</h2>
+        <p class="kr muted" data-reveal>모두 AI 코딩 도구로 만들었고, 휴대폰과 데스크톱에서 확인했습니다.</p>
+      </div>
+      <div class="stack">
+        <article class="stack-card">
+          <div class="sc-copy">
+            <span class="sc-num">Sample 01 · Web Design</span>
+            <h3 class="kr">홈페이지 시작 틀</h3>
+            <p class="kr">랜딩 홈페이지를 빠르게 만들기 위한 시작 틀입니다.</p>
+            <ul class="kr"><li>대표 색 한 줄로 브랜드 색 전체 변경</li><li>어두운 · 밝은 분위기 전환</li><li>한 · 영 전환 버튼</li><li>소개 · 서비스 · 후기 · FAQ · 상담 신청 구성</li></ul>
+            <div class="sc-foot"><span class="fit-chip kr">공고 · 홈페이지 제작 월 3개</span><a class="sc-btn" href="samples/web-template/index.html" target="_blank" data-magnetic data-cursor="Open">샘플 열기 <span>↗</span></a></div>
+          </div>
+          <a class="browser sc-browser" href="samples/web-template/index.html" target="_blank" data-cursor="Open">
+            <div class="browser-bar"><i></i><i></i><i></i><span class="url">sample · web-template</span></div>
+            <div class="viewport"><img class="shot" src="shots/web-template.jpg" alt="홈페이지 시작 틀 샘플 화면" /></div>
+          </a>
+        </article>
+        <article class="stack-card">
+          <div class="sc-copy">
+            <span class="sc-num">Sample 02 · Motion</span>
+            <h3 class="kr">대시보드 모션</h3>
+            <p class="kr">관리자 화면의 움직임을 정리한 샘플입니다. 일부는 H2B 운영 대시보드에 실제로 적용했습니다.</p>
+            <ul class="kr"><li>칸반 카드 끌어 옮기기 · 자리 재배치</li><li>메뉴 전환 · 팝업 · 오른쪽 상세 패널</li><li>캘린더 월 전환 · 일정 표시</li><li>차트 기간 전환 · 툴팁</li></ul>
+            <div class="sc-foot"><span class="fit-chip kr">공고 · 관리자 시스템 · UIUX</span><a class="sc-btn" href="samples/dashboard-motion/index.html" target="_blank" data-magnetic data-cursor="Open">샘플 열기 <span>↗</span></a></div>
+          </div>
+          <a class="browser sc-browser" href="samples/dashboard-motion/index.html" target="_blank" data-cursor="Open">
+            <div class="browser-bar"><i></i><i></i><i></i><span class="url">sample · dashboard-motion</span></div>
+            <div class="viewport"><img class="shot" src="shots/dashboard-motion.jpg" alt="대시보드 모션 샘플 화면" /></div>
+          </a>
+        </article>
+        <article class="stack-card">
+          <div class="sc-copy">
+            <span class="sc-num">Sample 03 · AI</span>
+            <h3 class="kr">서술형 AI 채점</h3>
+            <p class="kr">출제 → 응시 → 결과 → 분석 흐름의 시험 플랫폼 샘플입니다. 지금은 채점 기준 핵심어 비교로 동작하고, 실제 서비스에서는 AI API로 교체합니다.</p>
+            <ul class="kr"><li>문항별 채점 기준 · 배점 등록</li><li>한 · 영 시험지 전환</li><li>점수 · 피드백 · 문항별 분석</li><li>가짜 데이터로 만든 시연용 화면</li></ul>
+            <div class="sc-foot"><span class="fit-chip kr">공고 · 주관식 자동 채점 · AI 분석</span><a class="sc-btn" href="samples/ai-grading/index.html" target="_blank" data-magnetic data-cursor="Open">샘플 열기 <span>↗</span></a></div>
+          </div>
+          <a class="browser sc-browser" href="samples/ai-grading/index.html" target="_blank" data-cursor="Open">
+            <div class="browser-bar"><i></i><i></i><i></i><span class="url">sample · rubric</span></div>
+            <div class="viewport"><img class="shot" src="shots/ai-grading.jpg" alt="서술형 AI 채점 샘플 화면" /></div>
+          </a>
+        </article>
+      </div>
+    </section>
+
+    <!-- ON-DEVICE : 브라우저 안에서 도는 AI 시연 -->
+    <section class="ondevice" id="ondevice">
+      <div class="sec-head">
+        <p class="eyebrow" data-reveal>On-device AI</p>
+        <h2 class="kr" data-reveal>서버 없이 이 노트북에서 도는 AI.</h2>
+        <p class="kr muted" data-reveal>모델을 처음 한 번 내려받은 뒤에는 모든 처리를 브라우저 안에서 합니다. 입력한 글과 사진, 카메라 영상은 외부 서버로 보내지 않고, API 키도 쓰지 않습니다.</p>
+      </div>
+
+      <div class="od-tabs" role="tablist" data-reveal>
+        <button class="od-tab is-on" role="tab" data-tab="grade"><em>01</em><span class="kr">서술형 답안 채점</span></button>
+        <button class="od-tab" role="tab" data-tab="text"><em>02</em><span class="kr">AS 문의 자동 분류</span></button>
+        <button class="od-tab" role="tab" data-tab="image"><em>03</em><span class="kr">상품 사진 배경 제거</span></button>
+        <button class="od-tab" role="tab" data-tab="hand"><em>04</em><span class="kr">카메라 손 인식</span></button>
+      </div>
+
+      <div class="od-panels">
+        <!-- 01 서술형 채점 -->
+        <div class="od-panel is-on" data-panel="grade">
+          <div class="od-side">
+            <h3 class="kr">서술형 답안 채점</h3>
+            <p class="kr">LLM 없이 브라우저 안에서 채점합니다. 규칙으로 먼저 거르고, 작은 AI 모델이 표현이 달라도 같은 뜻인 답을 찾아 점수를 줍니다.</p>
+            <div class="od-q">
+              <small class="kr">교재 2단원 · 광합성 · 10점</small>
+              <p class="kr">식물이 광합성을 할 때 필요한 것과, 광합성으로 만들어지는 것을 모두 쓰시오.</p>
+            </div>
+            <span class="od-label kr">학생 답안 · 눌러서 바꾸기</span>
+            <div class="od-students kr"></div>
+            <textarea id="odAnswer" class="od-input kr" rows="3" maxlength="300" data-lenis-prevent></textarea>
+            <p class="od-model">규칙 + multilingual-e5-small · 118MB · Transformers.js</p>
+          </div>
+          <div class="od-stage od-grade-stage">
+            <div class="og-head">
+              <div class="og-score"><strong>–</strong><span>/ 10점</span></div>
+              <span class="og-status kr">채점 대기</span>
+            </div>
+            <p class="og-answer kr"></p>
+            <div class="og-legend kr"><span class="kw">핵심어</span><span class="ai">뜻으로 인정</span><span class="pii">개인정보 가림</span></div>
+            <div class="og-block">
+              <small class="kr">채점 기준</small>
+              <div class="og-rubric kr"></div>
+            </div>
+            <div class="og-block">
+              <small class="kr">규칙 검사</small>
+              <div class="og-checks kr"></div>
+            </div>
+            <div class="od-load kr" data-load="grade"><span class="od-load-txt">모델 준비 중</span><i><b></b></i></div>
+          </div>
+        </div>
+
+        <!-- 02 문의 분류 -->
+        <div class="od-panel" data-panel="text">
+          <div class="od-side">
+            <h3 class="kr">AS 문의 자동 분류</h3>
+            <p class="kr">H2B 톡톡 자동응답과 같은 흐름을 기기 안에서 처리합니다. 문장의 뜻을 숫자로 바꾼 뒤 유형별 예시 문장과 비교합니다.</p>
+            <label class="od-label kr" for="odText">고객 문의</label>
+            <textarea id="odText" class="od-input kr" rows="3" maxlength="200" data-lenis-prevent>급식기 전원이 갑자기 안 들어와요</textarea>
+            <div class="od-chips kr">
+              <button>물이 안 나와요 펌프 소리만 나요</button>
+              <button>주문한 거 언제 받을 수 있어요?</button>
+              <button>색상이 마음에 안 들어서 바꾸고 싶어요</button>
+              <button>필터만 따로 살 수 있나요</button>
+              <button>앱에서 급식 시간 설정은 어떻게 해요?</button>
+            </div>
+            <p class="od-model">multilingual-e5-small · 118MB · Transformers.js</p>
+          </div>
+          <div class="od-stage od-text-stage">
+            <div class="od-result">
+              <small class="kr">분류 결과</small>
+              <strong class="od-top kr">–</strong>
+              <p class="od-why kr">가장 가까운 예시 문장을 찾는 중입니다.</p>
+            </div>
+            <div class="od-bars kr"></div>
+            <div class="od-reply">
+              <small class="kr">추천 답변</small>
+              <p class="kr od-reply-text">–</p>
+            </div>
+            <div class="od-load kr" data-load="text"><span class="od-load-txt">모델 준비 중</span><i><b></b></i></div>
+          </div>
+        </div>
+
+        <!-- 03 배경 제거 -->
+        <div class="od-panel" data-panel="image">
+          <div class="od-side">
+            <h3 class="kr">상품 사진 배경 제거</h3>
+            <p class="kr">자사몰 상세페이지용 누끼 작업을 브라우저에서 처리합니다. 직접 올린 사진도 이 노트북 밖으로 나가지 않습니다.</p>
+            <span class="od-label kr">묘향가 상품 사진</span>
+            <div class="od-thumbs">
+              <button class="is-on" data-src="ondevice/sample-feeder.jpg"><img src="ondevice/sample-feeder.jpg" alt="자동급식기 사진" /></button>
+              <button data-src="ondevice/sample-fountain.jpg"><img src="ondevice/sample-fountain.jpg" alt="정수기 사진" /></button>
+              <button data-src="ondevice/sample-dual.jpg"><img src="ondevice/sample-dual.jpg" alt="급식기와 정수기 사진" /></button>
+            </div>
+            <div class="od-actions kr">
+              <label class="od-btn ghost">내 사진 올리기<input type="file" accept="image/*" hidden id="odFile" /></label>
+              <a class="od-btn" id="odSave" download="no-background.png" aria-disabled="true">PNG 저장</a>
+            </div>
+            <p class="od-model">ISNet · 44–88MB · Transformers.js</p>
+          </div>
+          <div class="od-stage od-image-stage">
+            <div class="od-compare" style="--pos:100%">
+              <img class="od-before" alt="원본 사진" />
+              <div class="od-after"><img alt="배경을 지운 사진" /></div>
+              <i class="od-handle"><b>↔</b></i>
+              <input type="range" min="0" max="100" value="100" aria-label="원본과 결과 비교" />
+              <span class="od-tag left kr">결과</span><span class="od-tag right kr">원본</span>
+            </div>
+            <div class="od-load kr" data-load="image"><span class="od-load-txt">탭을 열면 모델을 불러옵니다</span><i><b></b></i></div>
+          </div>
+        </div>
+
+        <!-- 04 손 인식 -->
+        <div class="od-panel" data-panel="hand">
+          <div class="od-side">
+            <h3 class="kr">카메라 손 인식</h3>
+            <p class="kr">손 모양과 관절 21개의 위치를 실시간으로 읽고 화면 속 모션을 움직입니다. 카메라 영상은 저장하거나 전송하지 않습니다.</p>
+            <ul class="od-guide kr">
+              <li>검지 끝을 따라 빛이 움직입니다.</li>
+              <li>엄지와 검지를 모으면 빛이 작아집니다.</li>
+              <li>손바닥 · 주먹 · 브이 · 엄지 척에 따라 색이 바뀝니다.</li>
+            </ul>
+            <div class="od-actions kr">
+              <button class="od-btn" id="odCam">카메라 켜기</button>
+            </div>
+            <p class="od-model">MediaPipe Gesture · 8MB · WebGL</p>
+          </div>
+          <div class="od-stage od-hand-stage">
+            <video playsinline muted></video>
+            <canvas></canvas>
+            <div class="od-gesture kr"><small>인식한 손 모양</small><b>–</b></div>
+            <div class="od-fps">– fps</div>
+            <div class="od-load kr" data-load="hand"><span class="od-load-txt">카메라 켜기를 누르면 시작합니다</span><i><b></b></i></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FIT : 공고 항목과 해 본 일 -->
+    <section class="fit" id="fit">
+      <div class="sec-head">
+        <p class="eyebrow" data-reveal>Job Fit</p>
+        <h2 class="kr" data-reveal>공고 항목과 해 본 일.</h2>
+      </div>
+      <div class="fit-legend kr" data-reveal><span class="pill done">해 본 일</span><span class="pill sample">샘플 준비</span><span class="pill near">비슷한 일</span><span class="pill learn">배우는 중</span></div>
+      <div class="fit-list">
+        <div class="fit-row"><b class="kr">홈페이지 제작 · 수정 · 월 3개 납품</b><p class="kr">묘향가 자사몰 리뉴얼(카페24) · 홈페이지 시작 틀(샘플 1)</p><span class="pill done kr">해 본 일</span></div>
+        <div class="fit-row"><b class="kr">관리자 시스템 · 회원관리 · DB</b><p class="kr">H2B 대시보드 · 로그인 토큰, 경로별 권한, 비밀번호 해시 · PostgreSQL</p><span class="pill done kr">해 본 일</span></div>
+        <div class="fit-row"><b class="kr">UIUX · 기획 · PM</b><p class="kr">EarthMera 3개 프로덕트 디자인 리드 · 업체 홈페이지 제안서와 견적 작성</p><span class="pill done kr">해 본 일</span></div>
+        <div class="fit-row"><b class="kr">바이브 코딩 (우대)</b><p class="kr">모든 작업을 AI 코딩 도구로 구현하고 직접 배포 · 운영</p><span class="pill done kr">해 본 일</span></div>
+        <div class="fit-row"><b class="kr">주관식 자동 채점 · AI 결과 분석</b><p class="kr">H2B 상담 AI 자동답장 · 대화 요약 운영 · 서술형 AI 채점(샘플 3) · 기기 안 채점 시연</p><span class="pill sample kr">샘플 준비</span></div>
+        <div class="fit-row"><b class="kr">자동 마케팅</b><p class="kr">메타 픽셀 설치 · 상담 답변 이메일 알림 · 노션 · 구글시트 자동 연동</p><span class="pill near kr">비슷한 일</span></div>
+        <div class="fit-row"><b class="kr">음성 · 영상 · 번역 데이터 AI 분석</b><p class="kr">외부 AI API 연결 방식으로 접근 · 처음 다루는 영역</p><span class="pill learn kr">배우는 중</span></div>
+        <div class="fit-row"><b class="kr">온디바이스 (우대)</b><p class="kr">브라우저 안 AI 시연 4종(서술형 채점 · 문의 분류 · 배경 제거 · 손 인식) · 앱 · 기기 탑재는 배우는 중</p><span class="pill sample kr">샘플 준비</span></div>
+      </div>
+    </section>
+
+    <!-- FLOW : 월 3개 납품 흐름 -->
+    <section class="flow">
+      <div class="sec-head">
+        <p class="eyebrow" data-reveal>How I work</p>
+        <h2 class="kr" data-reveal>월 3개 납품 흐름.</h2>
+      </div>
+      <div class="flow-steps">
+        <i class="flow-line"></i>
+        <div class="flow-step"><span class="fs-n">1</span><b class="kr">요청 정리</b><p class="kr">고객 요청을 한 장으로 정리하고 범위와 일정을 확정합니다.</p></div>
+        <div class="flow-step"><span class="fs-n">2</span><b class="kr">기획 · 시안</b><p class="kr">구조와 화면 시안을 Figma로 만들어 먼저 확인받습니다.</p></div>
+        <div class="flow-step"><span class="fs-n">3</span><b class="kr">구현 · 배포</b><p class="kr">시작 틀과 AI 코딩 도구로 구현하고 바로 배포 링크를 공유합니다.</p></div>
+        <div class="flow-step"><span class="fs-n">4</span><b class="kr">수정 · 유지보수</b><p class="kr">수정 요청을 반영하고, 운영 중 문제는 원인부터 찾아 고칩니다.</p></div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <footer class="cta" id="contact">
+      <p class="eyebrow">Contact</p>
+      <h2 class="cta-title"><span class="line">Let's build</span><span class="line accent">together.</span></h2>
+      <p class="kr muted">심녕호 · 홈페이지 제작 및 웹 프로젝트 담당자 지원</p>
+      <a class="cta-btn" href="mailto:sudgh8096@gmail.com" data-magnetic data-cursor="Mail">sudgh8096@gmail.com <span>↗</span></a>
+      <div class="credits">
+        <span>Built with GSAP · ScrollTrigger · SplitText · Lenis · Three.js · Transformers.js · MediaPipe · Claude Code</span>
+        <span>© 2026 심녕호</span>
+      </div>
+    </footer>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/ScrollTrigger.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/SplitText.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.3.4/dist/lenis.min.js"></script>
+  <script src="main.js?v=8"></script>
+  <script type="module" src="hero3d.js?v=8"></script>
+  <script type="module" src="ondevice/ondevice.js?v=6"></script>
+</body>
+</html>

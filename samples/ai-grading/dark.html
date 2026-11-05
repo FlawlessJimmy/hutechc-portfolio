@@ -1,0 +1,1379 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07080c">
+<title>rubric · 서술형 AI 채점</title>
+<meta name="description" content="채점 기준표로 서술형 답안을 채점하고 피드백하는 시연용 목업">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#07080c;
+  --text:#eef0f6;--text-2:rgba(236,239,247,.68);--text-3:rgba(236,239,247,.44);--text-4:rgba(236,239,247,.26);
+  --stroke:rgba(255,255,255,.08);--stroke-2:rgba(255,255,255,.14);--fill:rgba(255,255,255,.04);--fill-2:rgba(255,255,255,.07);
+  --accent:#a9bcff;--mint:#6ee7b7;--amber:#fbc26b;--rose:#ff9aae;--violet:#c4b5fd;
+  --r-xl:24px;--r-lg:20px;--r-md:14px;
+  --ease:cubic-bezier(.2,.8,.2,1);--spring:cubic-bezier(.34,1.36,.64,1);
+  --font:Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Segoe UI",sans-serif;
+  --mono:"SF Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,Pretendard,"Apple SD Gothic Neo",monospace;
+  --side:256px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font:15px/1.6 var(--font);letter-spacing:-.006em;word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+::selection{background:rgba(169,188,255,.3)}
+button,input,textarea{font:inherit;color:inherit;letter-spacing:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:disabled{cursor:default}
+a{color:inherit;-webkit-tap-highlight-color:transparent}
+svg{display:block;flex:none}
+:focus-visible{outline:2px solid rgba(169,188,255,.7);outline-offset:3px}
+.num{font-variant-numeric:tabular-nums}
+.dim{color:var(--text-3)}
+
+/* 배경: 천천히 움직이는 빛 + 점 격자 + 입자감 */
+.bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.bg::before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.075) 1px,transparent 1.3px);background-size:24px 24px;-webkit-mask-image:radial-gradient(ellipse 80% 55% at 50% 0%,#000 10%,transparent 72%);mask-image:radial-gradient(ellipse 80% 55% at 50% 0%,#000 10%,transparent 72%)}
+.blob{position:absolute;border-radius:50%;filter:blur(70px);will-change:transform}
+.b1{width:56vmax;height:56vmax;left:-20vmax;top:-28vmax;background:radial-gradient(circle,rgba(84,110,255,.55),transparent 62%);animation:d1 34s ease-in-out infinite alternate}
+.b2{width:44vmax;height:44vmax;right:-18vmax;top:16%;background:radial-gradient(circle,rgba(22,190,160,.3),transparent 62%);animation:d2 42s ease-in-out infinite alternate}
+.b3{width:60vmax;height:60vmax;left:22%;bottom:-40vmax;background:radial-gradient(circle,rgba(150,92,255,.34),transparent 62%);animation:d3 50s ease-in-out infinite alternate}
+@keyframes d1{to{transform:translate(10vmax,6vmax) scale(1.08)}}
+@keyframes d2{to{transform:translate(-8vmax,10vmax) scale(.92)}}
+@keyframes d3{to{transform:translate(-12vmax,-6vmax) scale(1.12)}}
+.grain{position:absolute;inset:0;opacity:.07;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+/* 유리 패널 + 마우스를 따라가는 테두리 빛 */
+.glass{position:relative;background:linear-gradient(180deg,rgba(255,255,255,.068),rgba(255,255,255,.022));border:1px solid var(--stroke);border-radius:var(--r-lg);-webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 30px 60px -30px rgba(0,0,0,.7)}
+.spot::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(520px circle at var(--mx,50%) var(--my,-300px),rgba(255,255,255,.04),transparent 50%);opacity:0;transition:opacity .4s}
+.spot::after{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;pointer-events:none;background:radial-gradient(280px circle at var(--mx,50%) var(--my,-300px),rgba(205,216,255,.6),transparent 62%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:0;transition:opacity .4s}
+@media (hover:hover){.spot:hover::before,.spot:hover::after{opacity:1}}
+
+/* 뼈대 */
+.shell{position:relative;z-index:1;overflow-x:clip}
+.content{max-width:960px;margin:0 auto;padding:22px 16px calc(120px + env(safe-area-inset-bottom))}
+.content>*+*{margin-top:14px}
+.side{display:none}
+.top{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:10px;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top));background:rgba(7,8,12,.55);-webkit-backdrop-filter:blur(20px) saturate(160%);backdrop-filter:blur(20px) saturate(160%);border-bottom:1px solid var(--stroke)}
+.top .tag2{display:none}
+.top-r{margin-left:auto;display:flex;align-items:center;gap:8px}
+.tabbar{position:fixed;z-index:30;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));padding:6px;border-radius:22px;background:linear-gradient(180deg,rgba(28,31,44,.72),rgba(16,18,27,.72))}
+.tabbar .track{position:relative;display:grid;grid-template-columns:repeat(4,1fr)}
+.tabbar .ind{position:absolute;top:0;bottom:0;left:0;width:25%;border-radius:16px;background:rgba(255,255,255,.09);border:1px solid var(--stroke-2);box-shadow:inset 0 1px 0 rgba(255,255,255,.08);transition:transform .55s var(--spring)}
+.tabbar a{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0 7px;text-decoration:none;font-size:11.5px;font-weight:600;color:var(--text-3);transition:color .3s}
+.tabbar a[aria-current=page]{color:var(--text)}
+@media (min-width:1000px){
+  .top,.tabbar{display:none}
+  .side{display:flex;flex-direction:column;position:fixed;z-index:30;top:16px;bottom:16px;left:16px;width:var(--side);padding:18px 14px 14px;border-radius:var(--r-xl)}
+  .shell{padding-left:calc(var(--side) + 16px)}
+  .content{padding:52px 40px 64px}
+  .m-only{display:none}
+}
+
+/* 로고 */
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+.brand .word{display:block;font-weight:800;font-size:19px;letter-spacing:-.05em;line-height:1.1}
+.brand .tag2{display:block;font-size:11.5px;color:var(--text-3);font-weight:500;letter-spacing:0}
+.mark{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(145deg,#f4f6ff,#aebfff);box-shadow:inset 0 1px 0 #fff,0 6px 18px -6px rgba(169,188,255,.8)}
+
+/* 사이드바 */
+.ws{margin-top:18px;padding:10px 12px;border-radius:14px;background:var(--fill);border:1px solid var(--stroke);display:flex;align-items:center;gap:10px;font-size:13px;line-height:1.35}
+.ws-av{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#2a3354,#161b2e);border:1px solid var(--stroke-2);display:grid;place-items:center;font:600 12px var(--mono);flex:none}
+.ws b{font-weight:600;display:block}
+.ws small{color:var(--text-3);font-size:11.5px}
+.navlbl{font:600 10.5px var(--mono);letter-spacing:.14em;color:var(--text-4);text-transform:uppercase;margin:22px 12px 8px}
+.nav{position:relative;display:grid;gap:4px}
+.nav .ind{position:absolute;left:0;right:0;top:0;height:48px;border-radius:13px;background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.05));border:1px solid var(--stroke-2);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 8px 20px -10px rgba(0,0,0,.6);transition:transform .55s var(--spring)}
+.nav a{position:relative;display:flex;align-items:center;gap:12px;height:48px;padding:0 12px;border-radius:13px;text-decoration:none;color:var(--text-2);transition:color .25s}
+.nav a:hover{color:var(--text)}
+.nav .k{font:500 11px var(--mono);color:var(--text-4);width:18px;transition:color .3s}
+.nav .t{font-weight:600;font-size:14.5px}
+.nav .s{margin-left:auto;font-size:11.5px;color:var(--text-3)}
+.nav a[aria-current=page]{color:var(--text)}
+.nav a[aria-current=page] .k{color:var(--accent)}
+.side-foot{margin-top:auto;display:grid;gap:12px}
+.side-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+
+/* 한/영 스위치 */
+.seg{position:relative;display:inline-grid;grid-auto-flow:column;grid-auto-columns:1fr;padding:3px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid var(--stroke)}
+.seg .thumb{position:absolute;top:3px;bottom:3px;left:3px;width:calc((100% - 6px) / 2);border-radius:9px;background:rgba(255,255,255,.13);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 4px 12px -4px rgba(0,0,0,.6);transition:transform .5s var(--spring)}
+.seg button{position:relative;border:0;background:none;padding:5px 12px;font-size:12px;font-weight:700;color:var(--text-3);transition:color .25s;min-height:30px}
+.seg button[aria-pressed=true]{color:var(--text)}
+.seg.lg button{padding:9px 20px;font-size:14px;min-height:44px}
+
+/* 시연 표시 */
+.demo{position:relative}
+.demo-btn{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(251,194,107,.26);background:rgba(251,194,107,.07);color:#ffd9a0;border-radius:999px;padding:4px 11px 4px 9px;font-size:11.5px;font-weight:600;min-height:28px;transition:background .25s}
+.demo-btn:hover{background:rgba(251,194,107,.13)}
+.demo-btn i{width:6px;height:6px;border-radius:50%;background:var(--amber);animation:ping 2.4s infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(251,194,107,.55)}70%{box-shadow:0 0 0 7px rgba(251,194,107,0)}100%{box-shadow:0 0 0 0 rgba(251,194,107,0)}}
+.pop{position:absolute;z-index:40;width:272px;padding:14px 16px;font-size:13px;line-height:1.65;color:var(--text-2);border-radius:16px;background:linear-gradient(180deg,rgba(30,33,46,.94),rgba(18,20,30,.94));animation:pop .4s var(--spring) both}
+.pop b{display:block;color:var(--text);font-size:13.5px;margin-bottom:4px}
+.side .pop{bottom:calc(100% + 10px);left:0}
+.top .pop{position:fixed;top:calc(62px + env(safe-area-inset-top));left:16px;right:16px;width:auto}
+@keyframes pop{from{opacity:0;transform:translateY(6px) scale(.97)}}
+.linkish{border:0;background:none;color:var(--text-3);font-size:12px;padding:6px 2px;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(255,255,255,.18)}
+.linkish:hover{color:var(--text-2)}
+
+/* 등장 움직임 */
+.rise{animation:rise .8s var(--ease) both;animation-delay:calc(var(--d,0) * 60ms)}
+@keyframes rise{from{opacity:0;transform:translateY(14px) scale(.99)}}
+
+/* 머리글 */
+.phead{margin-bottom:24px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--text-3)}
+.eyebrow .k{font:500 11px var(--mono);color:var(--text-4)}
+.eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent)}
+.eyebrow .dot.s{background:var(--mint);box-shadow:0 0 12px var(--mint)}
+.phead h1{margin:12px 0 8px;font-size:clamp(27px,4.2vw,38px);line-height:1.16;letter-spacing:-.045em;font-weight:700}
+.phead p{margin:0;color:var(--text-2);font-size:15px;max-width:600px}
+
+/* 버튼·입력 */
+.btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 18px;border-radius:12px;border:1px solid transparent;font-weight:700;font-size:14.5px;text-decoration:none;white-space:nowrap;transition:transform .2s var(--ease),background .25s,border-color .25s,color .25s,opacity .25s}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.55}
+.btn-white{background:#eef1f8;color:#0a0c12;box-shadow:inset 0 1px 0 #fff,0 12px 30px -14px rgba(169,188,255,.65)}
+.btn-white:hover{background:#fff}
+.btn-glass{background:rgba(255,255,255,.06);border-color:var(--stroke-2);color:var(--text)}
+.btn-glass:hover{background:rgba(255,255,255,.1)}
+.btn-sm{min-height:34px;padding:6px 12px;font-size:13px;border-radius:10px}
+.btn-lg{min-height:52px;padding:12px 24px;font-size:15.5px;border-radius:14px}
+.arr{display:inline-flex;transition:transform .35s var(--ease)}
+.btn:hover .arr{transform:translateX(3px)}
+.field{display:block}
+.field>span{display:block;font-size:12px;font-weight:600;color:var(--text-3);margin-bottom:7px}
+.in{display:block;width:100%;background:rgba(0,0,0,.24);border:1px solid var(--stroke);border-radius:12px;padding:11px 13px;font-size:16px;line-height:1.55;color:var(--text);transition:border-color .2s,box-shadow .25s,background .2s}
+.in::placeholder{color:var(--text-4)}
+.in:focus{outline:none;border-color:rgba(169,188,255,.5);background:rgba(0,0,0,.32);box-shadow:0 0 0 4px rgba(169,188,255,.1)}
+textarea.in{resize:none;overflow:hidden}
+.in.mono{font:13.5px/1.6 var(--mono)}
+.grid-2{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:760px){.grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.card{padding:18px}
+@media (min-width:760px){.card{padding:22px 24px}}
+.stack{display:grid;gap:14px;grid-template-columns:minmax(0,1fr)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;align-items:center}
+.content>.actions{margin-top:26px}
+@media (max-width:560px){.actions>*{flex:1 1 100%}.actions .btn{width:100%}}
+
+/* 칩 */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.mchip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:var(--fill);border:1px solid var(--stroke);font-size:12.5px;color:var(--text-2)}
+.mchip b{color:var(--text);font-weight:700}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;border-radius:999px;padding:4px 10px;border:1px solid}
+.tag-mint{color:#b5f5d9;background:rgba(110,231,183,.08);border-color:rgba(110,231,183,.22)}
+.tag-amber{color:#ffe2b3;background:rgba(251,194,107,.08);border-color:rgba(251,194,107,.24)}
+.tag-violet{color:#e0d8ff;background:rgba(196,181,253,.09);border-color:rgba(196,181,253,.24)}
+.tag-neutral{color:var(--text-2);background:var(--fill);border-color:var(--stroke)}
+
+/* 1. 출제 */
+.qhead{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.qno{font:600 11.5px var(--mono);color:var(--accent);background:rgba(169,188,255,.09);border:1px solid rgba(169,188,255,.2);border-radius:8px;padding:3px 8px}
+.qpts{font-size:12.5px;color:var(--text-3);font-weight:600;white-space:nowrap}
+.qhead .btn{margin-left:auto}
+.qtext{margin:0;font-size:16.5px;font-weight:600;line-height:1.55;letter-spacing:-.02em}
+.qtext.sm{font-size:15px;color:var(--text-2);font-weight:500}
+.qalt{margin:8px 0 0;font-size:13px;color:var(--text-3)}
+.qalt b{font:600 10px var(--mono);letter-spacing:.08em;border:1px solid var(--stroke-2);border-radius:5px;padding:1px 5px;margin-right:7px;color:var(--text-2)}
+.rubric{list-style:none;margin:18px 0 0;padding:0;display:grid;gap:8px}
+@media (min-width:760px){.rubric{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.rubric li{display:flex;gap:12px;padding:12px;border-radius:14px;background:rgba(0,0,0,.18);border:1px solid var(--stroke);transition:border-color .25s,background .25s}
+.rubric li:hover{border-color:var(--stroke-2);background:rgba(0,0,0,.24)}
+.pts{flex:none;min-width:34px;height:26px;padding:0 6px;display:grid;place-items:center;border-radius:8px;font-weight:700;font-size:12.5px;background:rgba(255,255,255,.08);border:1px solid var(--stroke-2)}
+.mn{min-width:0}
+.clabel{font-weight:600;font-size:14px;margin:2px 0 7px}
+.kws{display:flex;flex-wrap:wrap;gap:4px}
+.kw{font:500 11.5px var(--mono);color:var(--text-2);background:rgba(255,255,255,.04);border:1px solid var(--stroke);border-radius:6px;padding:1px 6px}
+.editor{display:grid;gap:12px;animation:rise .5s var(--ease) both}
+.sec-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin-top:6px}
+.sec-h b{font-size:13.5px}
+.sec-h span{font-size:12.5px;color:var(--text-3)}
+.cedit{display:grid;gap:10px;padding:14px;border-radius:14px;background:rgba(0,0,0,.2);border:1px solid var(--stroke)}
+.cgrid{display:grid;gap:10px;grid-template-columns:minmax(0,1fr) 84px}
+.cgrid .f-ko{grid-column:1/-1}
+@media (min-width:760px){.cgrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 84px}.cgrid .f-ko{grid-column:auto}}
+.del{border:0;background:none;color:var(--rose);font-size:12.5px;font-weight:600;padding:4px 0;justify-self:end}
+.ed-actions{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.dashed{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:58px;border:1px dashed var(--stroke-2);border-radius:var(--r-lg);background:rgba(255,255,255,.02);color:var(--text-2);font-weight:600;font-size:14.5px;transition:border-color .25s,color .25s,background .25s}
+.dashed:hover{border-color:rgba(169,188,255,.45);color:var(--text);background:rgba(169,188,255,.05)}
+
+/* 2. 응시 */
+.take-top{display:grid;gap:14px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:760px){.take-top{grid-template-columns:minmax(0,1fr) auto;align-items:end}}
+.progress{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--text-2)}
+.pdots{display:flex;gap:5px}
+.pdots i{width:22px;height:4px;border-radius:2px;background:rgba(255,255,255,.12);transition:background .5s,box-shadow .5s}
+.pdots i.on{background:var(--mint);box-shadow:0 0 10px rgba(110,231,183,.6)}
+.qtake{padding:18px}
+@media (min-width:760px){.qtake{padding:22px 24px}}
+.qtake-h{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px}
+.qn{flex:none;width:28px;height:28px;border-radius:9px;display:grid;place-items:center;font:600 12.5px var(--mono);background:rgba(255,255,255,.07);border:1px solid var(--stroke-2)}
+.qtake-h .qtext{flex:1;min-width:0}
+.qtake-h .qpts{padding-top:3px}
+.ans{min-height:118px}
+.count{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--text-3);margin-top:8px;min-height:18px}
+.live{display:inline-flex;align-items:center;gap:6px;color:#b5f5d9;animation:rise .4s var(--ease) both}
+.live i{width:6px;height:6px;border-radius:50%;background:var(--mint);animation:blink 1s ease-in-out infinite}
+@keyframes blink{50%{opacity:.25}}
+
+/* 채점 중 */
+.overlay{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:20px;background:rgba(5,6,10,.5);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);animation:fade .35s var(--ease) both}
+@keyframes fade{from{opacity:0}}
+.gcard{width:min(360px,calc(100vw - 40px));padding:30px 24px 22px;text-align:center;border-radius:24px;border:1px solid var(--stroke-2);background:linear-gradient(180deg,rgba(26,29,42,.94),rgba(13,15,23,.94));animation:pop .5s var(--spring) both}
+.gcard h3{margin:0;font-size:18px;letter-spacing:-.03em}
+.orb{position:relative;width:64px;height:64px;margin:0 auto 18px;border-radius:50%;overflow:hidden;box-shadow:0 0 60px -6px rgba(122,162,255,.75);animation:breathe 2.4s ease-in-out infinite}
+.orb::before{content:"";position:absolute;inset:-25%;background:conic-gradient(from 0deg,#7aa2ff,#c084fc,#5eead4,#93c5fd,#7aa2ff);filter:blur(6px);animation:spin 2.2s linear infinite}
+.orb::after{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 32% 26%,rgba(255,255,255,.85),transparent 30%),radial-gradient(circle,transparent 46%,rgba(10,12,20,.5) 100%)}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes breathe{50%{transform:scale(1.06)}}
+.ticker{height:22px;margin:6px 0 18px;font-size:13.5px;color:var(--text-2);overflow:hidden}
+.ticker span{display:block;animation:tick .3s var(--ease) both}
+@keyframes tick{from{opacity:0;transform:translateY(8px)}}
+.gsteps{list-style:none;margin:0 0 18px;padding:0;display:grid;gap:10px;text-align:left}
+.gsteps li{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--text-3);transition:color .3s}
+.gsteps li.on{color:var(--text)}
+.gsteps li.ok{color:var(--text-2)}
+.gdot{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--stroke-2);display:grid;place-items:center;flex:none;transition:all .35s var(--ease)}
+.gsteps li.on .gdot{border-color:var(--accent);box-shadow:0 0 0 4px rgba(169,188,255,.12)}
+.gsteps li.on .gdot::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);animation:blink 1s infinite}
+.gsteps li.ok .gdot{background:var(--mint);border-color:var(--mint)}
+.gsteps li.ok .gdot::after{content:"";width:8px;height:4.5px;border:2px solid #07130e;border-top:0;border-right:0;transform:translateY(-1px) rotate(-45deg)}
+.gbar{height:3px;border-radius:2px;background:rgba(255,255,255,.08);overflow:hidden}
+.gbar i{display:block;height:100%;background:linear-gradient(90deg,#7aa2ff,#c084fc,#5eead4);transition:width .2s linear}
+
+/* 3. 결과 */
+.hero{display:flex;align-items:center;gap:24px;flex-wrap:wrap;padding:22px}
+@media (min-width:760px){.hero{padding:26px 28px}}
+.gauge{position:relative;width:136px;height:136px;flex:none}
+.gauge svg{width:100%;height:100%}
+.gnum{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.gnum b{font-size:42px;font-weight:700;letter-spacing:-.06em}
+.gnum small{font-size:11px;color:var(--text-3);margin-top:7px;font-weight:500}
+.hero-txt{flex:1 1 240px;min-width:0}
+.hraw{margin:12px 0 4px;font-size:22px;font-weight:700;letter-spacing:-.04em}
+.hraw .dim{font-weight:500}
+.hband{margin:0;color:var(--text-2);font-size:15px}
+.sum3{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:860px){.sum3{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.sumh{display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600;color:var(--text-2);margin-bottom:14px}
+.ibox{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;border:1px solid}
+.i-mint{color:var(--mint);background:rgba(110,231,183,.1);border-color:rgba(110,231,183,.24)}
+.i-amber{color:var(--amber);background:rgba(251,194,107,.1);border-color:rgba(251,194,107,.24)}
+.i-accent{color:var(--accent);background:rgba(169,188,255,.1);border-color:rgba(169,188,255,.24)}
+.slist{list-style:none;margin:0;padding:0;display:grid;gap:9px;font-size:14px}
+.slist .q{font:600 11px var(--mono);color:var(--text-3);margin-right:8px}
+.qr-h{display:flex;align-items:center;gap:10px}
+.qr-score{margin-left:auto;font-size:26px;font-weight:700;letter-spacing:-.05em;line-height:1}
+.qr-score small{font-size:13px;color:var(--text-3);font-weight:500;letter-spacing:0}
+.line{position:relative;height:4px;border-radius:2px;background:rgba(255,255,255,.07);overflow:hidden}
+.line i{position:absolute;inset:0 auto 0 0;width:var(--w);border-radius:2px;background:linear-gradient(90deg,#8fb0ff,#6ee7b7);animation:grow 1.3s var(--ease) both;animation-delay:calc(var(--d,0) * 60ms + 250ms)}
+.line.warn i{background:linear-gradient(90deg,#fbc26b,#ff9aae)}
+@keyframes grow{from{width:0}}
+.qr .line{margin:16px 0}
+.qr-body{display:grid;gap:18px;margin-top:16px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:860px){.qr-body{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:22px}}
+.lbl{font-size:12px;font-weight:600;color:var(--text-3);margin-bottom:8px}
+.answer{margin:0;white-space:pre-wrap;padding:14px 16px;border-radius:14px;background:rgba(0,0,0,.24);border:1px solid var(--stroke);font-size:15px;line-height:1.9}
+.answer mark{color:inherit;border-radius:4px;padding:2px 1px;background:linear-gradient(90deg,rgba(110,231,183,.28),rgba(110,231,183,.28)) no-repeat 0 0/0% 100%;animation:hl .7s var(--ease) forwards;animation-delay:calc(var(--i) * 150ms + 700ms)}
+@keyframes hl{to{background-size:100% 100%;box-shadow:inset 0 -1.5px 0 rgba(110,231,183,.75)}}
+.crit{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.crit li{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:14px;border:1px solid var(--stroke);background:rgba(0,0,0,.2)}
+.ck{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;margin-top:1px}
+.crit li.ok .ck{background:rgba(110,231,183,.14);color:var(--mint);box-shadow:inset 0 0 0 1px rgba(110,231,183,.32)}
+.crit li.miss .ck{background:rgba(251,194,107,.13);color:var(--amber);box-shadow:inset 0 0 0 1px rgba(251,194,107,.32)}
+.crit .b{flex:1;min-width:0}
+.crit .t2{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.crit .t2 b{font-size:14px;font-weight:600}
+.crit .pt{font:600 12.5px var(--mono);white-space:nowrap}
+.crit li.ok .pt{color:var(--mint)}
+.crit li.miss .pt{color:var(--amber)}
+.crit .sub{font-size:13px;color:var(--text-3);margin-top:3px}
+.crit li.miss .sub{color:#f1d4a6}
+.review{display:flex;gap:9px;align-items:flex-start;margin-top:10px;padding:10px 12px;border-radius:12px;font-size:13px;color:#e4dcff;background:rgba(196,181,253,.08);border:1px solid rgba(196,181,253,.2)}
+.review svg{margin-top:2px}
+.codewrap{margin-top:18px;border-top:1px solid var(--stroke);padding-top:12px}
+.codebtn{display:inline-flex;align-items:center;gap:8px;border:0;background:none;color:var(--text-2);font-size:13px;font-weight:600;padding:4px 0;transition:color .2s}
+.codebtn:hover{color:var(--text)}
+.codebtn .chev{transition:transform .35s var(--ease)}
+.code{margin-top:10px;border-radius:14px;border:1px solid var(--stroke);background:rgba(3,4,8,.62);overflow:hidden;animation:rise .45s var(--ease) both}
+.code-h{display:flex;align-items:center;gap:10px;padding:8px 8px 8px 14px;border-bottom:1px solid var(--stroke);font:500 11.5px var(--mono);color:var(--text-3)}
+.code-h .dots{display:flex;gap:5px}
+.code-h .dots i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.12)}
+.code-h .btn{margin-left:auto}
+.code pre{margin:0;padding:14px;white-space:pre-wrap;overflow-wrap:anywhere;font:12.5px/1.75 var(--mono);color:#c9d2e8;max-height:320px;overflow:auto}
+.c-h{color:#a9bcff;font-weight:600}
+.c-k{color:#c4b5fd}
+.c-s{color:#9ee8c6}
+.c-n{color:#fbc26b}
+.code .note{padding:10px 14px;font-size:12.5px;color:var(--text-3);border-top:1px solid var(--stroke)}
+
+/* 4. 분석 */
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (min-width:860px){.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.kpi{padding:16px 18px}
+.kpi .k{font-size:12px;color:var(--text-3);font-weight:600}
+.kpi .v{margin-top:8px;font-size:32px;font-weight:700;letter-spacing:-.05em;line-height:1.05}
+.kpi .v small{font-size:13px;color:var(--text-3);font-weight:500;margin-left:3px;letter-spacing:0}
+.kpi .v.t{font-size:16px;letter-spacing:-.025em;line-height:1.35}
+.kpi .sub{font-size:12px;color:var(--text-3);margin-top:6px}
+.ai{padding:20px 22px}
+.ai-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ai-h b{font-size:15px}
+.ai-h .tag{margin-left:auto}
+.mini-orb{position:relative;width:22px;height:22px;border-radius:50%;overflow:hidden;box-shadow:0 0 18px -2px rgba(122,162,255,.85)}
+.mini-orb::before{content:"";position:absolute;inset:-25%;background:conic-gradient(#7aa2ff,#c084fc,#5eead4,#7aa2ff);animation:spin 3s linear infinite}
+.mini-orb::after{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.8),transparent 34%)}
+.ai ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.ai li{position:relative;padding-left:20px;color:var(--text-2);font-size:14.5px}
+.ai li::before{content:"";position:absolute;left:3px;top:.68em;width:6px;height:6px;border-radius:2px;background:var(--accent);transform:rotate(45deg)}
+.ai li b{color:var(--text);font-weight:600}
+.grid2{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:860px){.grid2{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}}
+.ch{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:18px}
+.ch h2{margin:0;font-size:15px;font-weight:600;letter-spacing:-.02em}
+.ch span{font-size:12px;color:var(--text-3)}
+.hist{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:6px;align-items:end;height:150px;padding-top:6px}
+.hist .col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:5px;min-width:0}
+.hist .cnt{font:500 11px var(--mono);color:var(--text-3);line-height:1}
+.hist .col.me .cnt{color:var(--mint);font-family:var(--font);font-weight:700}
+.hist .bar2{width:100%;border-radius:6px 6px 3px 3px;background:linear-gradient(180deg,rgba(169,188,255,.6),rgba(169,188,255,.1));transform-origin:bottom;animation:growy 1s var(--ease) both;animation-delay:calc(var(--d) * 55ms + 250ms)}
+.hist .col.me .bar2{background:linear-gradient(180deg,#6ee7b7,rgba(110,231,183,.18));box-shadow:0 0 22px -4px rgba(110,231,183,.7)}
+@keyframes growy{from{transform:scaleY(0)}}
+.hx{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:6px;margin-top:8px;font:500 10.5px var(--mono);color:var(--text-4);text-align:center}
+.hbar{margin-bottom:16px}
+.hbar:last-child{margin-bottom:0}
+.hbar .row{display:flex;justify-content:space-between;gap:12px;font-size:13.5px;margin-bottom:8px}
+.hbar .l{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-2)}
+.hbar .l .q{font:600 11px var(--mono);color:var(--text-3);margin-right:8px}
+.hbar .v{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.crit2{display:grid;gap:0 32px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:860px){.crit2{grid-template-columns:repeat(2,minmax(0,1fr))}.crit2 .hbar:nth-last-child(2){margin-bottom:0}}
+.tbl-card{padding:6px 6px 2px}
+.tbl-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 12px 10px}
+.tbl-h h2{margin:0;font-size:15px;font-weight:600}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{text-align:left;font-size:11.5px;font-weight:600;color:var(--text-3);padding:10px 12px;border-bottom:1px solid var(--stroke)}
+.tbl td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,.05);vertical-align:middle}
+.tbl tbody tr{animation:rise .6s var(--ease) both;animation-delay:calc(var(--d) * 35ms + 300ms);transition:background .2s}
+.tbl tbody tr:hover{background:rgba(255,255,255,.03)}
+.tbl tr.me td{background:rgba(169,188,255,.07)}
+.tbl tr:last-child td{border-bottom:0}
+.tbl .r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.who{display:flex;align-items:center;gap:10px;min-width:0}
+.av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:11.5px;font-weight:700;flex:none;background:linear-gradient(135deg,hsl(var(--h) 55% 42%),hsl(calc(var(--h) + 50) 55% 26%));border:1px solid rgba(255,255,255,.12)}
+.st{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;white-space:nowrap}
+.st i{width:6px;height:6px;border-radius:50%}
+.st.ok{color:#b5f5d9}.st.ok i{background:var(--mint)}
+.st.rv{color:#e0d8ff}.st.rv i{background:var(--violet);box-shadow:0 0 8px var(--violet)}
+@media (max-width:560px){.hide-sm{display:none}.tbl td,.tbl th{padding-left:8px;padding-right:8px}}
+
+.empty{text-align:center;padding:48px 20px}
+.empty .ibox{width:52px;height:52px;border-radius:16px;margin:0 auto 14px;color:var(--text-2);background:var(--fill-2);border-color:var(--stroke-2)}
+.empty p{margin:0 0 18px;color:var(--text-2)}
+.toast{position:fixed;z-index:80;left:50%;top:calc(18px + env(safe-area-inset-top));padding:10px 16px;border-radius:999px;font-size:13.5px;font-weight:600;white-space:nowrap;background:linear-gradient(180deg,rgba(34,37,52,.9),rgba(20,22,32,.9));animation:toast 2.3s var(--ease) both}
+@keyframes toast{0%{opacity:0;transform:translate(-50%,-10px)}12%,82%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-6px)}}
+.foot{display:flex;justify-content:space-between;align-items:center;gap:8px;padding-top:16px;border-top:1px solid var(--stroke);color:var(--text-4);font-size:12px}
+.content>.foot{margin-top:56px}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="bg" aria-hidden="true"><i class="blob b1"></i><i class="blob b2"></i><i class="blob b3"></i><i class="grain"></i></div>
+<div id="root"></div>
+<noscript><p style="padding:24px;color:#eee">이 시연 화면은 자바스크립트가 켜져 있어야 보여요.</p></noscript>
+
+<!-- 빌드 도구 없이 쓰려고 라이브러리를 vendor/ 에 함께 넣음 (인터넷 없이도 열림). 라이선스: vendor/LICENSES.txt -->
+<script src="vendor/react.production.min.js"></script>
+<script src="vendor/react-dom.production.min.js"></script>
+<script src="vendor/htm.umd.js"></script>
+<script src="vendor/border-beam.js"></script>
+<script>
+(() => {
+'use strict';
+const { useState, useEffect, useRef, useLayoutEffect, useContext, createContext, Fragment } = React;
+const html = htm.bind(React.createElement);
+const Beam = window.BorderBeam;
+const STORE = 'rubric-demo-v2';
+const VIEWS = ['build', 'take', 'result', 'report'];
+const REDUCED = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+const GRADE_MS = 2700;
+
+/* ───────── 화면 글자 (한/영) ───────── */
+const I18N = {
+  ko: {
+    tagline: '서술형 AI 채점',
+    ws: '2학년 3반 · 과학', wsSub: '응시자 13명',
+    flow: 'Flow',
+    nav: { build: { t: '출제', s: '선생님' }, take: { t: '응시', s: '학생' }, result: { t: '결과', s: '학생' }, report: { t: '분석', s: '선생님' } },
+    navLabel: '주요 메뉴',
+    eyebrow: { build: '출제 · 선생님', take: '응시 · 학생', result: '결과 · 학생', report: '분석 · 선생님' },
+    demo: '시연용',
+    demoTitle: '시연용 화면이에요',
+    demoBody: '지금은 AI 대신 채점 기준표의 핵심어로 점수를 매겨요. 실제 서비스에선 같은 기준표와 답안을 AI에게 보내 채점과 피드백을 받아요. 결과 화면의 ‘AI 요청 보기’에서 그 요청을 볼 수 있어요.',
+    reset: '처음 상태로', resetConfirm: '한 번 더 누르면 초기화', resetDone: '처음 상태로 되돌렸어요',
+    foot: 'rubric · 가짜 데이터로 만든 시연용 목업',
+    themeAlt: '밝은 화면으로 보기',
+    buildH: '문제와 채점 기준', buildP: '문항마다 ‘무엇을 쓰면 몇 점’인지 정해 두면, 채점과 피드백이 모두 이 기준을 따라요.',
+    examTitle: '시험 이름',
+    unitQ: '문항', unitPts: '점 만점', unitCrit: '개 기준',
+    qLabel: n => `문항 ${n}`, pts: n => `${n}점`, ptsUnit: '점',
+    edit: '편집', done: '완료', delQ: '문항 삭제', delC: '기준 삭제',
+    qKo: '문제 · 한국어', qEn: '문제 · English',
+    rubricH: '채점 기준', cKo: '기준 · 한국어', cEn: '기준 · English', cPts: '점수', cKw: '인정하는 표현 · 쉼표로 구분',
+    kwHelp: '한·영 표현을 같이 넣으면 어느 언어로 답해도 채점돼요. 앞에 ^를 붙이면 단어 첫머리만 인정해요.',
+    addC: '기준 추가', addQ: '문항 추가', toTake: '학생 화면으로',
+    emptyQ: '문제를 입력하세요', noQ: '출제 화면에서 문항을 먼저 추가해 주세요.', goBuild: '출제로 가기',
+    takeMeta: (n, tot, m) => `${n}문항 · ${tot}점 만점 · 약 ${m}분`,
+    name: '이름', namePh: '이름을 입력하세요', langPick: '응시 언어',
+    answerPh: '생각한 내용을 문장으로 써 주세요.', chars: n => `${n}자`, writing: '작성 중',
+    progress: (a, n) => `${n}문항 중 ${a}개 작성`,
+    fillSample: '예시 답안 넣기', submit: '제출하고 채점 받기',
+    grading: '채점하고 있어요', gradingSteps: ['답안 읽는 중', '기준표와 비교하는 중', '피드백 쓰는 중'], checking: l => `‘${l}’ 기준 확인 중`,
+    meDefault: '나 (데모)',
+    resultH: '채점 결과', resultEmpty: '아직 제출한 답안이 없어요.', goTake: '응시하러 가기',
+    per100: '100점 환산',
+    band: [
+      '핵심 개념을 다시 복습해 보면 좋겠어요. 아래 추천 복습부터 시작해 보세요.',
+      '기본 개념은 알고 있어요. 보완할 점을 하나씩 확인해 보세요.',
+      '핵심은 잘 잡았어요. 빠진 부분만 채우면 만점이에요.',
+      '핵심을 거의 모두 정확하게 썼어요. 아주 잘했어요.'
+    ],
+    reviewCount: n => `선생님 확인 ${n}건`,
+    strong: '잘한 부분', weak: '보완할 부분', study: '추천 복습', none: '없음',
+    myAnswer: '내 답안', noAnswer: '답을 쓰지 않았어요.', criteria: '기준별 채점',
+    reviewShort: '답이 짧아서 선생님이 한 번 더 확인해요.',
+    reviewUnmatched: '기준표와 다른 표현으로 썼을 수 있어서 선생님이 한 번 더 확인해요.',
+    found: '근거', tipDefault: l => `‘${l}’에 해당하는 내용을 답에 넣어 주세요.`,
+    promptBtn: 'AI 요청 보기', promptHide: '접기',
+    promptNote: '실제 서비스에서 이 문항을 채점할 때 AI에게 보내는 요청이에요. 답은 JSON으로 받아서 이 화면을 그려요.',
+    copy: '복사', copied: '복사했어요', copyFail: '복사하지 못했어요',
+    retake: '다시 풀기', toReport: '선생님 분석 보기',
+    reportH: '반 전체 분석', reportP: '응시 결과를 모아 어디서 많이 막혔는지 보여 줘요. 응시자는 가짜 데이터예요.',
+    kTakers: '응시자', kAvg: '평균 점수', kReview: '선생님 확인', kWeak: '가장 많이 놓친 기준',
+    unitPeople: '명', unitCases: '건',
+    enSub: e => `영어 응시 ${e}명`, meSub: p => `내 점수 ${p}점`, reviewSub: '확인 후 점수 확정', achieved: p => `달성 ${p}%`,
+    aiH: 'AI 요약', aiTag: '시연',
+    ai1: (avg, q, p) => html`평균은 <b>${avg}점</b>이에요. 가장 어려웠던 문항은 <b>${q}</b>(평균 달성 ${p}%)이에요.`,
+    ai2: (label, n, miss, unit) => html`‘${label}’ 기준을 ${n}명 중 <b>${miss}명</b>이 놓쳤어요. 다음 수업에서 <b>${unit}</b> 복습을 추천해요.`,
+    ai3: k => html`확인이 필요한 답안 <b>${k}건</b>은 선생님이 본 뒤 점수를 확정해요.`,
+    ai4: e => html`영어로 응시한 ${e}명도 같은 기준표로 채점했어요.`,
+    dist: '점수 분포', distSub: '100점 환산', byQ: '문항별 평균', avgUnit: '점수 / 만점', byC: '채점 기준별 달성률', lowFirst: '낮은 순',
+    tName: '이름', tLang: '언어', tAt: '제출', tScore: '점수', tState: '상태',
+    sDone: '채점 완료', sReview: '확인 필요', me: '나',
+    exportCsv: 'CSV 내보내기', exported: 'CSV 파일을 만들었어요',
+    langName: { ko: '한국어', en: '영어' }
+  },
+  en: {
+    tagline: 'Written-answer grading',
+    ws: 'Grade 8 · Class 3 · Science', wsSub: '13 students',
+    flow: 'Flow',
+    nav: { build: { t: 'Create', s: 'Teacher' }, take: { t: 'Test', s: 'Student' }, result: { t: 'Result', s: 'Student' }, report: { t: 'Insights', s: 'Teacher' } },
+    navLabel: 'Main menu',
+    eyebrow: { build: 'Create · Teacher', take: 'Test · Student', result: 'Result · Student', report: 'Insights · Teacher' },
+    demo: 'Demo',
+    demoTitle: 'This is a demo',
+    demoBody: 'For now, scores come from key phrases in the rubric instead of an AI. In the real service, the same rubric and answer are sent to an AI for grading and feedback. You can see that request under “View AI request” on the result screen.',
+    reset: 'Reset', resetConfirm: 'Click again to reset', resetDone: 'Demo reset',
+    foot: 'rubric · demo mockup with fake data',
+    themeAlt: 'Light version',
+    buildH: 'Questions & rubric', buildP: 'Set what earns how many points for each question. Grading and feedback both follow this rubric.',
+    examTitle: 'Test name',
+    unitQ: 'questions', unitPts: 'pts total', unitCrit: 'criteria',
+    qLabel: n => `Q${n}`, pts: n => (n === 1 ? '1 pt' : `${n} pts`), ptsUnit: ' pts',
+    edit: 'Edit', done: 'Done', delQ: 'Delete question', delC: 'Delete',
+    qKo: 'Question · Korean', qEn: 'Question · English',
+    rubricH: 'Rubric', cKo: 'Criterion · Korean', cEn: 'Criterion · English', cPts: 'Points', cKw: 'Accepted phrases · comma-separated',
+    kwHelp: 'Add Korean and English phrases so answers in either language are graded. A leading ^ matches only at the start of a word.',
+    addC: 'Add criterion', addQ: 'Add question', toTake: 'Student view',
+    emptyQ: 'Enter the question', noQ: 'Add a question in Create first.', goBuild: 'Go to Create',
+    takeMeta: (n, tot, m) => `${n} questions · ${tot} pts · about ${m} min`,
+    name: 'Name', namePh: 'Enter your name', langPick: 'Test language',
+    answerPh: 'Write your answer in full sentences.', chars: n => `${n} chars`, writing: 'Writing',
+    progress: (a, n) => `${a} of ${n} answered`,
+    fillSample: 'Fill sample answers', submit: 'Submit & get graded',
+    grading: 'Grading your answers', gradingSteps: ['Reading answers', 'Comparing with the rubric', 'Writing feedback'], checking: l => `Checking “${l}”`,
+    meDefault: 'Me (demo)',
+    resultH: 'Your result', resultEmpty: 'No answers submitted yet.', goTake: 'Take the test',
+    per100: 'out of 100',
+    band: [
+      'Review the key concepts again. Start with the suggested review below.',
+      'You know the basics. Go through the points to improve one by one.',
+      'You got the key ideas. Fill in the missing parts for a perfect score.',
+      'You covered almost every key point accurately. Great work.'
+    ],
+    reviewCount: n => `${n} teacher check${n > 1 ? 's' : ''}`,
+    strong: 'Done well', weak: 'To improve', study: 'Suggested review', none: 'None',
+    myAnswer: 'My answer', noAnswer: 'No answer written.', criteria: 'By criterion',
+    reviewShort: 'Your answer is short, so a teacher will double-check it.',
+    reviewUnmatched: 'You may have used different wording from the rubric, so a teacher will double-check it.',
+    found: 'Evidence', tipDefault: l => `Add something about “${l}” to your answer.`,
+    promptBtn: 'View AI request', promptHide: 'Hide',
+    promptNote: 'This is the request sent to the AI when grading this question in the real service. The JSON reply drives this screen.',
+    copy: 'Copy', copied: 'Copied', copyFail: 'Could not copy',
+    retake: 'Try again', toReport: 'Teacher insights',
+    reportH: 'Class insights', reportP: 'All submissions in one place, showing where students got stuck. Students are fake data.',
+    kTakers: 'Students', kAvg: 'Average', kReview: 'Teacher check', kWeak: 'Most-missed criterion',
+    unitPeople: '', unitCases: '',
+    enSub: e => `${e} took it in English`, meSub: p => `My score ${p}`, reviewSub: 'Confirmed after review', achieved: p => `${p}% achieved`,
+    aiH: 'AI summary', aiTag: 'Demo',
+    ai1: (avg, q, p) => html`The average is <b>${avg}/100</b>. The hardest question was <b>${q}</b> (${p}% achieved on average).`,
+    ai2: (label, n, miss, unit) => html`<b>${miss} of ${n}</b> students missed “${label}”. Suggest reviewing <b>${unit}</b> next class.`,
+    ai3: k => html`<b>${k}</b> answer${k > 1 ? 's need' : ' needs'} a teacher check before the score is final.`,
+    ai4: e => html`${e} student${e > 1 ? 's' : ''} took the test in English and ${e > 1 ? 'were' : 'was'} graded with the same rubric.`,
+    dist: 'Score distribution', distSub: 'out of 100', byQ: 'Average by question', avgUnit: 'score / max', byC: 'Criteria achieved', lowFirst: 'lowest first',
+    tName: 'Name', tLang: 'Language', tAt: 'Submitted', tScore: 'Score', tState: 'Status',
+    sDone: 'Graded', sReview: 'Check needed', me: 'Me',
+    exportCsv: 'Export CSV', exported: 'CSV file created',
+    langName: { ko: 'Korean', en: 'English' }
+  }
+};
+
+/* ───────── 예시 시험 (rate는 가짜 응시자 결과를 만들 때만 씀) ───────── */
+const SEED_EXAM = {
+  title: { ko: '광합성과 상태 변화 — 서술형 평가', en: 'Photosynthesis & Changes of State — Written Test' },
+  questions: [
+    {
+      id: 'q1',
+      unit: { ko: '교재 2단원 · 광합성', en: 'Textbook Unit 2 · Photosynthesis' },
+      text: { ko: '식물이 광합성을 할 때 필요한 것과, 광합성으로 만들어지는 것을 모두 쓰시오.', en: 'List everything a plant needs for photosynthesis and everything photosynthesis produces.' },
+      rubric: [
+        { id: 'q1c1', label: { ko: '빛 에너지', en: 'Light energy' }, points: 2, rate: .95, keywords: ['빛', '햇볕', '태양', 'light', 'sun'],
+          tip: { ko: '광합성에 필요한 에너지(빛)를 써 주세요.', en: 'Mention the energy photosynthesis needs (light).' } },
+        { id: 'q1c2', label: { ko: '이산화탄소', en: 'Carbon dioxide' }, points: 2, rate: .85, keywords: ['이산화탄소', '탄산가스', 'co2', 'carbon dioxide'],
+          tip: { ko: '잎이 공기 중에서 받아들이는 기체(이산화탄소)를 써 주세요.', en: 'Mention the gas leaves take in from the air (carbon dioxide).' } },
+        { id: 'q1c3', label: { ko: '물', en: 'Water' }, points: 2, rate: .9, keywords: ['^물', '수분', 'water', 'h2o'],
+          tip: { ko: '뿌리로 흡수하는 물도 필요해요.', en: 'Plants also need the water taken up by their roots.' } },
+        { id: 'q1c4', label: { ko: '포도당(양분)', en: 'Glucose (food)' }, points: 2, rate: .72, keywords: ['포도당', '녹말', '양분', '당분', 'glucose', 'sugar', 'starch'],
+          tip: { ko: '광합성으로 만들어지는 양분(포도당)을 써 주세요.', en: 'Mention the food photosynthesis makes (glucose).' } },
+        { id: 'q1c5', label: { ko: '산소', en: 'Oxygen' }, points: 2, rate: .48, keywords: ['산소', 'oxygen', '^o2'],
+          tip: { ko: '포도당과 함께 만들어지는 기체(산소)도 써 주세요.', en: 'Also mention the gas produced along with glucose (oxygen).' } }
+      ],
+      sample: { ko: '광합성에는 빛 에너지와 이산화탄소, 물이 필요하고, 그 결과 포도당이 만들어진다.', en: 'A plant needs light, carbon dioxide and water, and photosynthesis makes glucose.' }
+    },
+    {
+      id: 'q2',
+      unit: { ko: '교재 4단원 · 물질의 상태 변화', en: 'Textbook Unit 4 · Changes of State' },
+      text: { ko: '물이 ‘기화’한다는 것이 무슨 뜻인지 설명하고, 생활 속에서 볼 수 있는 예를 하나 쓰시오.', en: 'Explain what it means when water “vaporizes,” and give one example from everyday life.' },
+      rubric: [
+        { id: 'q2c1', label: { ko: '액체 → 기체로 변함', en: 'Liquid turns into gas' }, points: 4, rate: .9, keywords: ['기체', '수증기', 'gas', 'vapor', 'vapour', 'steam'],
+          tip: { ko: '물이 어떤 상태에서 어떤 상태로 바뀌는지(액체 → 기체) 써 주세요.', en: 'Say which state changes into which (liquid → gas).' } },
+        { id: 'q2c2', label: { ko: '열을 흡수함', en: 'Absorbs heat' }, points: 3, rate: .55, keywords: ['흡수', '열을 얻', '열을 받', 'absorb', 'takes in heat', 'gains heat'],
+          tip: { ko: '기화할 때 주변의 열을 흡수한다는 점을 함께 써 주세요.', en: 'Add that water absorbs heat from its surroundings when it vaporizes.' } },
+        { id: 'q2c3', label: { ko: '생활 속 예', en: 'Everyday example' }, points: 3, rate: .85, keywords: ['빨래', '젖은', '끓', '땀', '웅덩이', '어항', 'laundry', 'clothes', 'boil', 'sweat', 'puddle'],
+          tip: { ko: '젖은 빨래가 마르는 것처럼 생활 속 예를 하나 들어 주세요.', en: 'Give an everyday example, like wet laundry drying.' } }
+      ],
+      sample: { ko: '액체인 물이 열을 흡수해서 기체인 수증기로 변하는 것이다. 예를 들어 젖은 빨래가 마르는 것이 기화이다.', en: 'Liquid water absorbs heat and turns into water vapor, a gas. For example, wet laundry dries in the sun.' }
+    },
+    {
+      id: 'q3',
+      unit: { ko: '교재 2단원 · 광합성에 영향을 주는 요인', en: 'Textbook Unit 2 · Factors Affecting Photosynthesis' },
+      text: { ko: '온도가 높아질수록 광합성은 계속 빨라질까요? 그렇게 생각한 까닭과 함께 쓰시오.', en: 'Does photosynthesis keep getting faster as the temperature rises? Explain your reasoning.' },
+      rubric: [
+        { id: 'q3c1', label: { ko: '일정 온도까지만 빨라짐', en: 'Faster only up to a point' }, points: 3, rate: .7, keywords: ['아니', '일정', '적정', '최적', '어느 정도', '까지만', '^no', 'not always', 'up to', 'optimal', 'a certain'],
+          tip: { ko: '처음엔 빨라지지만 일정 온도까지만 그렇다는 점을 써 주세요.', en: 'Say it speeds up only until a certain temperature.' } },
+        { id: 'q3c2', label: { ko: '너무 높으면 느려짐', en: 'Slows down when too hot' }, points: 3, rate: .75, keywords: ['느려', '감소', '줄어', '떨어', '멈', 'slow', 'decrease', 'drop', 'decline', 'stop'],
+          tip: { ko: '온도가 너무 높으면 오히려 느려진다는 점을 써 주세요.', en: 'Say it actually slows down when it gets too hot.' } },
+        { id: 'q3c3', label: { ko: '까닭: 효소가 열에 약함', en: 'Reason: heat damages enzymes' }, points: 4, rate: .35, keywords: ['효소', '변성', '단백질', 'enzyme', 'denature', 'protein'],
+          tip: { ko: '까닭으로 ‘광합성을 돕는 효소가 높은 열에 약하다’는 점을 써 주세요.', en: 'For the reason, explain that the enzymes driving photosynthesis are damaged by high heat.' } }
+      ],
+      sample: { ko: '아니다. 어느 정도까지는 빨라지지만 온도가 너무 높아지면 오히려 광합성이 느려진다.', en: 'No. It speeds up to a point, but if it gets too hot, photosynthesis slows down.' }
+    }
+  ]
+};
+
+/* 가짜 응시자 (실존 인물 아님) */
+const FAKE_TAKERS = [
+  { id: 's01', name: '김하늘', lang: 'ko', at: '11/02 09:12' },
+  { id: 's02', name: '이서준', lang: 'ko', at: '11/02 09:15' },
+  { id: 's03', name: '박지우', lang: 'ko', at: '11/02 09:18' },
+  { id: 's04', name: 'Emma Lee', lang: 'en', at: '11/02 09:20' },
+  { id: 's05', name: '최민서', lang: 'ko', at: '11/02 09:21' },
+  { id: 's06', name: '정예린', lang: 'ko', at: '11/02 09:24', review: true },
+  { id: 's07', name: 'Liam Park', lang: 'en', at: '11/02 09:26' },
+  { id: 's08', name: '강도윤', lang: 'ko', at: '11/02 09:27' },
+  { id: 's09', name: '조하은', lang: 'ko', at: '11/02 09:31' },
+  { id: 's10', name: '윤시우', lang: 'ko', at: '11/02 09:33' },
+  { id: 's11', name: 'An Nguyen', lang: 'en', at: '11/02 09:35', review: true },
+  { id: 's12', name: '한소율', lang: 'ko', at: '11/02 09:38' }
+];
+
+const ICONS = {
+  build: '<path d="M4 20h4L18.5 9.5a2.12 2.12 0 0 0-3-3L5 17v3Z"/><path d="m13.5 8.5 3 3"/>',
+  take: '<rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 8h6M9 12h6M9 16h3"/>',
+  result: '<circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.2 2.4 2.4 4.6-4.9"/>',
+  report: '<path d="M4 20h16"/><path d="M7 16v-4"/><path d="M12 16V7"/><path d="M17 16v-7"/>',
+  arrow: '<path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  minus: '<path d="M7 12h10"/>',
+  eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.8"/>',
+  code: '<path d="m8.5 8-4 4 4 4"/><path d="m15.5 8 4 4-4 4"/>',
+  chev: '<path d="m6 9 6 6 6-6"/>',
+  download: '<path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/>',
+  book: '<path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5v-15Z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19"/>',
+  logo: '<path d="M8.5 9.5h9M8.5 13h6M8.5 16.5h7.5"/>'
+};
+
+/* ───────── 도우미 ───────── */
+const clone = o => JSON.parse(JSON.stringify(o));
+const sum = (a, f = x => x) => a.reduce((s, x) => s + f(x), 0);
+const pad = n => String(n).padStart(2, '0');
+const uid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+const qMax = q => sum(q.rubric, c => +c.points || 0);
+const examTotal = ex => sum(ex.questions, qMax);
+const viewFromHash = () => { const v = location.hash.slice(1); return VIEWS.includes(v) ? v : 'build'; };
+const nowStr = () => { const d = new Date(); return `${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const parseKw = s => s.split(',').map(x => x.trim()).filter(Boolean);
+const hueOf = s => { let h = 0; for (const ch of s) h = (h * 31 + ch.codePointAt(0)) % 360; return h; };
+
+function freshState() { return { lang: 'ko', exam: clone(SEED_EXAM), answers: {}, taker: '', result: null }; }
+function loadState() {
+  const base = freshState();
+  try {
+    const s = JSON.parse(localStorage.getItem(STORE) || 'null');
+    if (s && s.exam && Array.isArray(s.exam.questions)) Object.assign(base, s);
+  } catch (e) { /* 저장소를 못 쓰면 처음 상태로 */ }
+  return base;
+}
+function saveState(s) { try { localStorage.setItem(STORE, JSON.stringify(s)); } catch (e) { /* 저장 실패해도 화면은 동작 */ } }
+
+/* ───────── 채점 (시연용: 기준표 핵심어 비교) ─────────
+   실제 서비스에선 buildPrompt()로 만든 요청을 AI에 보내고,
+   돌아온 JSON(기준별 점수·근거·피드백·확인 필요 여부)을 같은 모양으로 화면에 그린다. */
+const reCache = new Map();
+function kwRegex(kw) {
+  if (reCache.has(kw)) return reCache.get(kw);
+  let k = kw.trim(), wordStart = false;
+  if (k.startsWith('^')) { wordStart = true; k = k.slice(1); }
+  const body = [...k].filter(ch => !/\s/.test(ch)).map(ch => ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s*');
+  let re = null;
+  if (body) {
+    try { re = new RegExp((wordStart ? '(?<![\\p{L}\\p{N}])' : '') + body, 'giu'); }
+    catch (e) { re = new RegExp(body, 'gi'); }
+  }
+  reCache.set(kw, re);
+  return re;
+}
+function gradeQuestion(q, answer) {
+  const text = (answer || '').trim();
+  const crit = q.rubric.map(c => {
+    const ranges = [], hits = [];
+    for (const kw of c.keywords) {
+      const re = kwRegex(kw);
+      if (!re || !text) continue;
+      re.lastIndex = 0;
+      let m;
+      while ((m = re.exec(text))) {
+        if (!m[0].length) { re.lastIndex++; continue; }
+        ranges.push([m.index, m.index + m[0].length]);
+        hits.push(m[0]);
+      }
+    }
+    const hit = ranges.length > 0;
+    return { id: c.id, hit, earned: hit ? (+c.points || 0) : 0, ranges, hits: [...new Set(hits)] };
+  });
+  const earned = sum(crit, c => c.earned);
+  let review = null;
+  if (text && text.length < 12) review = 'short';
+  else if (text.length >= 30 && earned === 0) review = 'unmatched';
+  return { qid: q.id, text, crit, earned, max: qMax(q), review };
+}
+function mergeRanges(rs) {
+  const out = [];
+  for (const r of [...rs].sort((a, b) => a[0] - b[0] || b[1] - a[1])) {
+    const last = out[out.length - 1];
+    if (last && r[0] <= last[1]) last[1] = Math.max(last[1], r[1]);
+    else out.push([r[0], r[1]]);
+  }
+  return out;
+}
+function buildPrompt(q, text, lang, L) {
+  const ko = lang === 'ko';
+  const crit = q.rubric.map(c => `- ${c.id} · ${L(c.label)} (${c.points}${ko ? '점' : ' pts'})`).join('\n');
+  const schema = '{\n  "criteria": [\n' + q.rubric.map(c => `    {"id": "${c.id}", "score": 0, "evidence": "…"}`).join(',\n') + '\n  ],\n  "feedback": "…",\n  "needs_review": false\n}';
+  return ko
+    ? `[역할]\n너는 서술형 시험 채점 도우미야. 아래 채점 기준표만 근거로 점수를 매겨. 기준마다 학생 답안에서 근거가 된 구절을 그대로 옮겨 적고, 기준에 없는 내용으로는 점수를 주지 마. 확신이 낮으면 needs_review를 true로 해. 피드백은 학생이 응시한 언어로 2문장 이내.\n\n[문제]\n${L(q.text)}\n\n[채점 기준표]\n${crit}\n\n[학생 답안]\n${text || '(빈 답안)'}\n\n[응답 형식 — JSON만]\n${schema}`
+    : `[Role]\nYou grade written test answers. Score only against the rubric below. For each criterion, quote the exact phrase from the student's answer used as evidence, and never give points for anything outside the rubric. If unsure, set needs_review to true. Write feedback in the student's test language, 2 sentences max.\n\n[Question]\n${L(q.text)}\n\n[Rubric]\n${crit}\n\n[Student answer]\n${text || '(empty)'}\n\n[Response — JSON only]\n${schema}`;
+}
+
+/* 가짜 응시자 결과: 이름·기준 id로 정해지는 값이라 새로고침해도 같다 */
+function rand01(s) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  h ^= h >>> 15; h = Math.imul(h, 0x2c1b3c6d); h ^= h >>> 12; h = Math.imul(h, 0x297a2d39); h ^= h >>> 15;
+  return (h >>> 0) / 4294967296;
+}
+function allSubmissions(st) {
+  const qs = st.exam.questions;
+  const list = FAKE_TAKERS.map(tk => {
+    const perQ = qs.map(q => {
+      const crit = q.rubric.map(c => {
+        const hit = rand01(tk.id + ':' + c.id) < (typeof c.rate === 'number' ? c.rate : 0.7);
+        return { id: c.id, hit, earned: hit ? (+c.points || 0) : 0 };
+      });
+      return { crit, earned: sum(crit, c => c.earned), max: qMax(q) };
+    });
+    return { name: tk.name, lang: tk.lang, at: tk.at, review: !!tk.review, me: false, perQ, earned: sum(perQ, p => p.earned), max: sum(perQ, p => p.max) };
+  });
+  if (st.result) {
+    const r = st.result;
+    const perQ = qs.map(q => gradeQuestion(q, r.answers[q.id]));
+    list.unshift({ name: r.name, lang: r.lang, at: r.at, review: perQ.some(g => g.review), me: true, perQ, earned: sum(perQ, p => p.earned), max: sum(perQ, p => p.max) });
+  }
+  return list;
+}
+function exportCsv(st, T) {
+  const qs = st.exam.questions, subs = allSubmissions(st);
+  const rows = [[T.tName, T.tLang, T.tAt, ...qs.map((_, i) => T.qLabel(i + 1)), T.tScore, T.tState]];
+  subs.forEach(s => rows.push([s.name, T.langName[s.lang] || '', s.at, ...s.perQ.map(p => p.earned), `${s.earned}/${s.max}`, s.review ? T.sReview : T.sDone]));
+  const csv = '﻿' + rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = 'rubric-results.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
+    ta.remove();
+    return ok;
+  }
+}
+
+/* 마우스를 따라가는 카드 빛 */
+document.addEventListener('pointermove', e => {
+  const el = e.target.closest && e.target.closest('.spot');
+  if (!el) return;
+  const r = el.getBoundingClientRect();
+  el.style.setProperty('--mx', `${e.clientX - r.left}px`);
+  el.style.setProperty('--my', `${e.clientY - r.top}px`);
+}, { passive: true });
+
+/* ───────── 작은 부품 ───────── */
+const Ctx = createContext(null);
+const useApp = () => useContext(Ctx);
+
+function Icon({ name, size = 18, sw = 1.75 }) {
+  return html`<svg width=${size} height=${size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth=${sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML=${{ __html: ICONS[name] }} />`;
+}
+
+function useCountUp(to, ms = 1200, delay = 250) {
+  const [v, setV] = useState(REDUCED ? to : 0);
+  useEffect(() => {
+    if (REDUCED) { setV(to); return; }
+    let raf;
+    const t0 = performance.now() + delay;
+    const tick = now => {
+      const p = Math.min(1, Math.max(0, (now - t0) / ms));
+      setV(to * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [to]);
+  return v;
+}
+function CountUp({ to, delay, ms, dec = 0 }) {
+  const v = useCountUp(to, ms, delay);
+  return html`<span className="num">${dec ? v.toFixed(dec) : Math.round(v)}</span>`;
+}
+
+function AutoText(props) {
+  const ref = useRef(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight + 2}px`;
+  });
+  return html`<textarea ref=${ref} ...${props} />`;
+}
+
+function Brand() {
+  const { T } = useApp();
+  return html`<a className="brand" href="#build" aria-label="rubric">
+    <span className="mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0b0d14" strokeWidth="2.3" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML=${{ __html: ICONS.logo }} /></span>
+    <span><span className="word">rubric</span><span className="tag2">${T.tagline}</span></span>
+  </a>`;
+}
+
+function LangSwitch({ big }) {
+  const { st, setLang, T } = useApp();
+  return html`<div className=${'seg' + (big ? ' lg' : '')} role="group" aria-label=${T.langPick}>
+    <span className="thumb" style=${{ transform: st.lang === 'en' ? 'translateX(100%)' : 'none' }}></span>
+    ${['ko', 'en'].map(l => html`<button key=${l} type="button" aria-pressed=${st.lang === l} onClick=${() => setLang(l)}>${big ? (l === 'ko' ? '한국어' : 'English') : l.toUpperCase()}</button>`)}
+  </div>`;
+}
+
+function DemoPill() {
+  const { T } = useApp();
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const off = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('pointerdown', off);
+    return () => document.removeEventListener('pointerdown', off);
+  }, [open]);
+  return html`<div className="demo" ref=${ref}>
+    <button type="button" className="demo-btn" aria-expanded=${open} onClick=${() => setOpen(o => !o)}><i></i>${T.demo}</button>
+    ${open && html`<div className="pop glass" role="dialog" aria-label=${T.demoTitle}><b>${T.demoTitle}</b>${T.demoBody}</div>`}
+  </div>`;
+}
+
+function ResetBtn() {
+  const { T, reset } = useApp();
+  const [armed, setArmed] = useState(false);
+  useEffect(() => {
+    if (!armed) return;
+    const t = setTimeout(() => setArmed(false), 3500);
+    return () => clearTimeout(t);
+  }, [armed]);
+  return html`<button type="button" className="linkish" onClick=${() => { if (armed) { setArmed(false); reset(); } else setArmed(true); }}>${armed ? T.resetConfirm : T.reset}</button>`;
+}
+
+function Sidebar() {
+  const { T, view } = useApp();
+  const idx = VIEWS.indexOf(view);
+  return html`<aside className="side glass">
+    <${Brand} />
+    <div className="ws"><span className="ws-av">3</span><div><b>${T.ws}</b><small>${T.wsSub}</small></div></div>
+    <div className="navlbl">${T.flow}</div>
+    <nav className="nav" aria-label=${T.navLabel}>
+      <span className="ind" style=${{ transform: `translateY(${idx * 52}px)` }}></span>
+      ${VIEWS.map((v, i) => html`<a key=${v} href=${'#' + v} aria-current=${view === v ? 'page' : undefined}>
+        <span className="k">0${i + 1}</span><span className="t">${T.nav[v].t}</span><span className="s">${T.nav[v].s}</span></a>`)}
+    </nav>
+    <div className="side-foot">
+      <div><${DemoPill} /></div>
+      <div className="side-row"><${LangSwitch} /><${ResetBtn} /></div>
+      <a className="linkish" href=${'index.html#' + view}>${T.themeAlt} →</a>
+    </div>
+  </aside>`;
+}
+
+function TopBar() {
+  return html`<header className="top"><${Brand} /><div className="top-r"><${DemoPill} /><${LangSwitch} /></div></header>`;
+}
+
+function TabBar() {
+  const { T, view } = useApp();
+  const idx = VIEWS.indexOf(view);
+  return html`<nav className="tabbar glass" aria-label=${T.navLabel}><div className="track">
+    <span className="ind" style=${{ transform: `translateX(${idx * 100}%)` }}></span>
+    ${VIEWS.map(v => html`<a key=${v} href=${'#' + v} aria-current=${view === v ? 'page' : undefined}><${Icon} name=${v} size=${20} /><span>${T.nav[v].t}</span></a>`)}
+  </div></nav>`;
+}
+
+function PageHead({ k, s, label, title, sub }) {
+  return html`<header className="phead">
+    <div className="eyebrow rise"><span className=${'dot' + (s ? ' s' : '')}></span><span className="k">${k}</span><span>${label}</span></div>
+    <h1 className="rise" style=${{ '--d': 1 }}>${title}</h1>
+    ${sub && html`<p className="rise" style=${{ '--d': 2 }}>${sub}</p>`}
+  </header>`;
+}
+
+function Empty({ icon, text, href, cta }) {
+  return html`<section className="glass empty rise" style=${{ '--d': 2 }}>
+    <div className="ibox"><${Icon} name=${icon} size=${24} /></div>
+    <p>${text}</p>
+    <a className="btn btn-white" href=${href}>${cta}<span className="arr"><${Icon} name="arrow" size=${16} /></span></a>
+  </section>`;
+}
+
+function Foot() {
+  const { T, view } = useApp();
+  return html`<footer className="foot"><span>${T.foot}</span><span className="m-only"><a className="linkish" href=${'index.html#' + view}>${T.themeAlt}</a> <${ResetBtn} /></span></footer>`;
+}
+
+/* ───────── 1. 출제 ───────── */
+function BuildView() {
+  const { st, T, update, setEditing } = useApp();
+  const ex = st.exam;
+  const addQuestion = () => {
+    const id = uid('q');
+    update(s => { s.exam.questions.push({ id, unit: { ko: '', en: '' }, text: { ko: '', en: '' }, rubric: [{ id: uid('c'), label: { ko: '', en: '' }, points: 5, keywords: [] }], sample: null }); });
+    setEditing(e => [...e, id]);
+    setTimeout(() => { const el = document.getElementById('card-' + id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 60);
+  };
+  return html`<${Fragment}>
+    <${PageHead} k="01" label=${T.eyebrow.build} title=${T.buildH} sub=${T.buildP} />
+    <section className="glass card rise spot" style=${{ '--d': 3 }}>
+      <div className="grid-2">
+        <label className="field"><span>${T.examTitle} · 한국어</span><input className="in" value=${ex.title.ko} onChange=${e => { const v = e.target.value; update(s => { s.exam.title.ko = v; }); }} /></label>
+        <label className="field"><span>${T.examTitle} · English</span><input className="in" value=${ex.title.en} onChange=${e => { const v = e.target.value; update(s => { s.exam.title.en = v; }); }} /></label>
+      </div>
+      <div className="chips" style=${{ marginTop: '14px' }}>
+        <span className="mchip"><b className="num">${ex.questions.length}</b>${T.unitQ}</span>
+        <span className="mchip"><b className="num">${examTotal(ex)}</b>${T.unitPts}</span>
+        <span className="mchip"><b className="num">${sum(ex.questions, q => q.rubric.length)}</b>${T.unitCrit}</span>
+        <span className="mchip">KO · EN</span>
+      </div>
+    </section>
+    <div className="stack">${ex.questions.map((q, i) => html`<${QuestionCard} key=${q.id} q=${q} i=${i} />`)}</div>
+    <button type="button" className="dashed rise" style=${{ '--d': 4 + ex.questions.length }} onClick=${addQuestion}><${Icon} name="plus" size=${16} />${T.addQ}</button>
+    <div className="actions"><a className="btn btn-white btn-lg" href="#take">${T.toTake}<span className="arr"><${Icon} name="arrow" size=${16} /></span></a></div>
+  <//>`;
+}
+
+function QuestionCard({ q, i }) {
+  const { st, T, L, update, editing, setEditing } = useApp();
+  const isEd = editing.includes(q.id);
+  const other = st.lang === 'ko' ? q.text.en : q.text.ko;
+  const setQ = fn => update(s => { const x = s.exam.questions.find(y => y.id === q.id); if (x) fn(x, s); });
+  const setC = (cid, fn) => setQ(x => { const c = x.rubric.find(y => y.id === cid); if (c) fn(c); });
+  const val = fn => e => { const v = e.target.value; fn(v); };
+  return html`<article id=${'card-' + q.id} className="glass card rise spot" style=${{ '--d': 4 + i }}>
+    <div className="qhead">
+      <span className="qno">Q${i + 1}</span><span className="qpts">${T.pts(qMax(q))}</span>
+      <button type="button" className=${'btn btn-sm ' + (isEd ? 'btn-white' : 'btn-glass')} aria-expanded=${isEd}
+        onClick=${() => setEditing(e => (isEd ? e.filter(x => x !== q.id) : [...e, q.id]))}>${isEd ? T.done : T.edit}</button>
+    </div>
+    ${!isEd ? html`<div>
+        <p className="qtext">${L(q.text) || html`<span className="dim">${T.emptyQ}</span>`}</p>
+        ${other && html`<p className="qalt"><b>${st.lang === 'ko' ? 'EN' : 'KO'}</b>${other}</p>`}
+        <ul className="rubric">${q.rubric.map(c => html`<li key=${c.id}>
+          <span className="pts num">${+c.points || 0}</span>
+          <div className="mn"><div className="clabel">${L(c.label) || '—'}</div>
+            <div className="kws">${c.keywords.slice(0, 6).map(k => html`<span key=${k} className="kw">${k}</span>`)}${c.keywords.length > 6 && html`<span className="kw">+${c.keywords.length - 6}</span>`}</div></div>
+        </li>`)}</ul>
+      </div>`
+    : html`<div className="editor">
+        <div className="grid-2">
+          <label className="field"><span>${T.qKo}</span><${AutoText} className="in" rows=${2} value=${q.text.ko} onChange=${val(v => setQ(x => { x.text.ko = v; }))} /></label>
+          <label className="field"><span>${T.qEn}</span><${AutoText} className="in" rows=${2} value=${q.text.en} onChange=${val(v => setQ(x => { x.text.en = v; }))} /></label>
+        </div>
+        <div className="sec-h"><b>${T.rubricH}</b><span>${T.kwHelp}</span></div>
+        ${q.rubric.map(c => html`<div key=${c.id} className="cedit">
+          <div className="cgrid">
+            <label className="field f-ko"><span>${T.cKo}</span><input className="in" value=${c.label.ko} onChange=${val(v => setC(c.id, x => { x.label.ko = v; }))} /></label>
+            <label className="field"><span>${T.cEn}</span><input className="in" value=${c.label.en} onChange=${val(v => setC(c.id, x => { x.label.en = v; }))} /></label>
+            <label className="field"><span>${T.cPts}</span><input className="in num" type="number" inputMode="numeric" min="0" max="100" value=${c.points}
+              onChange=${val(v => setC(c.id, x => { x.points = Math.max(0, Math.min(100, parseInt(v, 10) || 0)); }))} /></label>
+          </div>
+          <label className="field"><span>${T.cKw}</span><input className="in mono" value=${c.kwText != null ? c.kwText : c.keywords.join(', ')}
+            onChange=${val(v => setC(c.id, x => { x.kwText = v; x.keywords = parseKw(v); }))} /></label>
+          <button type="button" className="del" onClick=${() => setQ(x => { x.rubric = x.rubric.filter(y => y.id !== c.id); })}>${T.delC}</button>
+        </div>`)}
+        <div className="ed-actions">
+          <button type="button" className="btn btn-glass btn-sm" onClick=${() => setQ(x => { x.rubric.push({ id: uid('c'), label: { ko: '', en: '' }, points: 2, keywords: [] }); })}><${Icon} name="plus" size=${14} />${T.addC}</button>
+          <button type="button" className="del" onClick=${() => { update(s => { s.exam.questions = s.exam.questions.filter(y => y.id !== q.id); }); setEditing(e => e.filter(x => x !== q.id)); }}>${T.delQ}</button>
+        </div>
+      </div>`}
+  </article>`;
+}
+
+/* ───────── 2. 응시 ───────── */
+function TakeView() {
+  const { st, T, L, update, focusQ, setFocusQ, submit, grading } = useApp();
+  const ex = st.exam, n = ex.questions.length;
+  const [typing, setTyping] = useState(false);
+  const timer = useRef(null);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  if (!n) return html`<${Fragment}><${PageHead} k="02" s=${true} label=${T.eyebrow.take} title=${T.nav.take.t} /><${Empty} icon="build" text=${T.noQ} href="#build" cta=${T.goBuild} /><//>`;
+
+  const answered = ex.questions.filter(q => (st.answers[q.id] || '').trim()).length;
+  const all = answered === n;
+
+  // 예시 답안을 한 글자씩 써 내려가며, 쓰는 중인 카드에 빛이 돌게 함
+  const fill = () => {
+    if (typing) return;
+    const items = ex.questions.map(q => [q.id, q.sample && (q.sample[st.lang] || q.sample.ko)]).filter(x => x[1]);
+    if (!items.length) return;
+    if (REDUCED) { update(s => { items.forEach(([id, t]) => { s.answers[id] = t; }); }); return; }
+    setTyping(true);
+    update(s => { items.forEach(([id]) => { s.answers[id] = ''; }); });
+    let qi = 0, ci = 0;
+    const step = () => {
+      if (qi >= items.length) { setTyping(false); setFocusQ(null); return; }
+      const [id, t] = items[qi];
+      if (ci === 0) {
+        setFocusQ(id);
+        const el = document.getElementById('qt-' + id);
+        if (el && window.innerWidth < 1000) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      ci = Math.min(t.length, ci + 2);
+      const part = t.slice(0, ci);
+      update(s => { s.answers[id] = part; });
+      if (ci >= t.length) { qi++; ci = 0; timer.current = setTimeout(step, 420); }
+      else timer.current = setTimeout(step, 24);
+    };
+    step();
+  };
+
+  return html`<${Fragment}>
+    <${PageHead} k="02" s=${true} label=${T.eyebrow.take} title=${L(ex.title)} sub=${T.takeMeta(n, examTotal(ex), Math.max(5, n * 4))} />
+    <section className="glass card take-top rise" style=${{ '--d': 3 }}>
+      <label className="field"><span>${T.name}</span><input className="in" value=${st.taker} placeholder=${T.namePh} autoComplete="off" onChange=${e => { const v = e.target.value; update(s => { s.taker = v; }); }} /></label>
+      <div className="field"><span>${T.langPick}</span><${LangSwitch} big=${true} /></div>
+    </section>
+    <div className="progress rise" style=${{ '--d': 4 }}>
+      <div className="pdots">${ex.questions.map(q => html`<i key=${q.id} className=${(st.answers[q.id] || '').trim() ? 'on' : ''}></i>`)}</div>
+      <span className="num">${T.progress(answered, n)}</span>
+    </div>
+    <div className="stack">
+      ${ex.questions.map((q, i) => {
+        const a = st.answers[q.id] || '';
+        const on = focusQ === q.id;
+        return html`<div key=${q.id} id=${'qt-' + q.id} className="rise" style=${{ '--d': 5 + i }}>
+          <${Beam} size="md" colorVariant="ocean" theme="dark" active=${on} duration=${2.6} brightness=${2.1} saturation=${1.5} glowSize=${1.5}>
+            <section className="glass qtake">
+              <div className="qtake-h"><span className="qn">${i + 1}</span><p className="qtext">${L(q.text)}</p><span className="qpts">${T.pts(qMax(q))}</span></div>
+              <${AutoText} className="in ans" rows=${4} value=${a} placeholder=${T.answerPh} aria-label=${T.qLabel(i + 1)} readOnly=${typing}
+                onFocus=${() => setFocusQ(q.id)} onBlur=${() => setFocusQ(f => (f === q.id ? null : f))}
+                onChange=${e => { const v = e.target.value; update(s => { s.answers[q.id] = v; }); }} />
+              <div className="count"><span>${on && html`<span className="live"><i></i>${T.writing}</span>`}</span><span className="num">${T.chars(a.length)}</span></div>
+            </section>
+          <//>
+        </div>`;
+      })}
+    </div>
+    <div className="actions">
+      <button type="button" className="btn btn-glass" onClick=${fill} disabled=${typing || grading}>${T.fillSample}</button>
+      <${Beam} size="pulse-outside" colorVariant="colorful" theme="dark" active=${all && !typing && !grading}>
+        <button type="button" className="btn btn-white btn-lg" onClick=${submit} disabled=${typing || grading}>${T.submit}<span className="arr"><${Icon} name="arrow" size=${16} /></span></button>
+      <//>
+    </div>
+  <//>`;
+}
+
+function GradingOverlay() {
+  const { st, T, L } = useApp();
+  const labels = st.exam.questions.flatMap(q => q.rubric.map(c => L(c.label))).filter(Boolean);
+  const [ms, setMs] = useState(0);
+  useEffect(() => {
+    const t0 = performance.now();
+    const id = setInterval(() => setMs(performance.now() - t0), 120);
+    return () => clearInterval(id);
+  }, []);
+  const step = ms < 700 ? 0 : ms < 1900 ? 1 : 2;
+  const prog = Math.min(100, (ms / (GRADE_MS - 250)) * 100);
+  const tickIdx = Math.floor(ms / 150);
+  const line = step === 1 && labels.length ? T.checking(labels[tickIdx % labels.length]) : T.gradingSteps[step];
+  return html`<div className="overlay" role="status" aria-live="polite">
+    <${Beam} size="md" colorVariant="colorful" theme="dark" duration=${1.7} brightness=${1.45}>
+      <div className="gcard">
+        <div className="orb"></div>
+        <h3>${T.grading}</h3>
+        <p className="ticker"><span key=${step === 1 ? tickIdx : 's' + step}>${line}</span></p>
+        <ol className="gsteps">${T.gradingSteps.map((s, i) => html`<li key=${i} className=${i < step ? 'ok' : i === step ? 'on' : ''}><span className="gdot"></span>${s}</li>`)}</ol>
+        <div className="gbar"><i style=${{ width: prog + '%' }}></i></div>
+      </div>
+    <//>
+  </div>`;
+}
+
+/* ───────── 3. 결과 ───────── */
+function Gauge({ pct, tone }) {
+  const v = useCountUp(pct, 1500, 350);
+  const R = 56, C = 2 * Math.PI * R;
+  const stops = tone === 'good' ? ['#d6e0ff', '#8fb0ff', '#6ee7b7'] : tone === 'mid' ? ['#fff1c7', '#fbc26b', '#f59e6b'] : ['#ffd6a0', '#ff9aae', '#f472b6'];
+  const id = 'gg-' + tone;
+  return html`<div className="gauge" role="img" aria-label=${`${pct} / 100`}>
+    <svg viewBox="0 0 136 136" style=${{ filter: `drop-shadow(0 0 16px ${tone === 'good' ? 'rgba(143,176,255,.4)' : 'rgba(251,194,107,.35)'})` }}>
+      <defs><linearGradient id=${id} x1="0" y1="0" x2="1" y2="1">${stops.map((c, i) => html`<stop key=${i} offset=${i / (stops.length - 1)} stopColor=${c} />`)}</linearGradient></defs>
+      <circle cx="68" cy="68" r=${R} fill="none" stroke="rgba(255,255,255,.07)" strokeWidth="9" />
+      <circle cx="68" cy="68" r=${R} fill="none" stroke=${`url(#${id})`} strokeWidth="9" strokeLinecap="round"
+        strokeDasharray=${C.toFixed(2)} strokeDashoffset=${(C * (1 - v / 100)).toFixed(2)} transform="rotate(-90 68 68)" />
+    </svg>
+    <div className="gnum"><b className="num">${Math.round(v)}</b><small>${useApp().T.per100}</small></div>
+  </div>`;
+}
+
+function Highlighted({ text, crit }) {
+  const out = [];
+  let pos = 0;
+  mergeRanges(crit.flatMap(c => c.ranges)).forEach(([s, e], k) => {
+    if (s > pos) out.push(text.slice(pos, s));
+    out.push(html`<mark key=${'m' + k} style=${{ '--i': k }}>${text.slice(s, e)}</mark>`);
+    pos = e;
+  });
+  out.push(text.slice(pos));
+  return html`<p className="answer">${out}</p>`;
+}
+
+function colorize(text) {
+  return text.split('\n').map((ln, i) => {
+    let node = ln;
+    if (/^\[.+\]$/.test(ln.trim())) node = html`<span className="c-h">${ln}</span>`;
+    else if (/^\s*[{}"[\]]/.test(ln)) {
+      const parts = [];
+      const re = /("(?:[^"\\]|\\.)*")(\s*:)?|\b(\d+|true|false)\b/g;
+      let last = 0, m, k = 0;
+      while ((m = re.exec(ln))) {
+        if (m.index > last) parts.push(ln.slice(last, m.index));
+        if (m[1]) { parts.push(html`<span key=${k++} className=${m[2] ? 'c-k' : 'c-s'}>${m[1]}</span>`); if (m[2]) parts.push(m[2]); }
+        else parts.push(html`<span key=${k++} className="c-n">${m[3]}</span>`);
+        last = re.lastIndex;
+      }
+      parts.push(ln.slice(last));
+      node = parts;
+    }
+    return html`<${Fragment} key=${i}>${node}${'\n'}<//>`;
+  });
+}
+
+function QResult({ q, g, i }) {
+  const { st, T, L, flash } = useApp();
+  const [open, setOpen] = useState(false);
+  const qp = g.max ? Math.round(g.earned / g.max * 100) : 0;
+  const tipOf = c => L(c.tip) || T.tipDefault(L(c.label));
+  const prompt = buildPrompt(q, g.text, st.lang, L);
+  return html`<article className="glass card qr rise spot" style=${{ '--d': 7 + i }}>
+    <div className="qr-h"><span className="qno">Q${i + 1}</span><span className="qpts">${L(q.unit)}</span><span className="qr-score">${g.earned}<small> / ${g.max}</small></span></div>
+    <div className=${'line' + (qp < 50 ? ' warn' : '')} style=${{ '--w': qp + '%', '--d': 7 + i }}><i></i></div>
+    <p className="qtext sm">${L(q.text)}</p>
+    <div className="qr-body">
+      <div>
+        <div className="lbl">${T.myAnswer}</div>
+        ${g.text ? html`<${Highlighted} text=${g.text} crit=${g.crit} />` : html`<p className="answer dim">${T.noAnswer}</p>`}
+        ${g.review && html`<div className="review"><${Icon} name="eye" size=${15} /><span>${g.review === 'short' ? T.reviewShort : T.reviewUnmatched}</span></div>`}
+      </div>
+      <div>
+        <div className="lbl">${T.criteria}</div>
+        <ul className="crit">${q.rubric.map((c, j) => {
+          const gc = g.crit[j];
+          return html`<li key=${c.id} className=${(gc.hit ? 'ok' : 'miss') + ' rise'} style=${{ '--d': 9 + i + j }}>
+            <span className="ck"><${Icon} name=${gc.hit ? 'check' : 'minus'} size=${13} sw=${2.4} /></span>
+            <div className="b"><div className="t2"><b>${L(c.label)}</b><span className="pt">${gc.earned}/${+c.points || 0}</span></div>
+            <div className="sub">${gc.hit ? `${T.found} · ${gc.hits.map(h => `“${h}”`).join(', ')}` : tipOf(c)}</div></div>
+          </li>`;
+        })}</ul>
+      </div>
+    </div>
+    <div className="codewrap">
+      <button type="button" className="codebtn" aria-expanded=${open} onClick=${() => setOpen(o => !o)}>
+        <${Icon} name="code" size=${15} />${open ? T.promptHide : T.promptBtn}<span className="chev" style=${{ transform: open ? 'rotate(180deg)' : 'none' }}><${Icon} name="chev" size=${14} /></span>
+      </button>
+      ${open && html`<div className="code">
+        <div className="code-h"><span className="dots"><i></i><i></i><i></i></span><span>grade-request · Q${i + 1}</span>
+          <button type="button" className="btn btn-glass btn-sm" onClick=${async () => flash((await copyText(prompt)) ? T.copied : T.copyFail)}>${T.copy}</button></div>
+        <pre>${colorize(prompt)}</pre>
+        <div className="note">${T.promptNote}</div>
+      </div>`}
+    </div>
+  </article>`;
+}
+
+function ResultView() {
+  const { st, T, L } = useApp();
+  const r = st.result, qs = st.exam.questions;
+  const [beamOn, setBeamOn] = useState(!REDUCED);
+  useEffect(() => { const t = setTimeout(() => setBeamOn(false), 4600); return () => clearTimeout(t); }, [r && r.at]);
+  if (!r) return html`<${Fragment}><${PageHead} k="03" s=${true} label=${T.eyebrow.result} title=${T.resultH} /><${Empty} icon="take" text=${T.resultEmpty} href="#take" cta=${T.goTake} /><//>`;
+
+  const graded = qs.map(q => gradeQuestion(q, r.answers[q.id]));
+  const earned = sum(graded, g => g.earned), max = sum(graded, g => g.max);
+  const pct = max ? Math.round(earned / max * 100) : 0;
+  const band = pct >= 90 ? 3 : pct >= 70 ? 2 : pct >= 40 ? 1 : 0;
+  const tone = pct >= 70 ? 'good' : pct >= 40 ? 'mid' : 'low';
+  const reviews = graded.filter(g => g.review).length;
+  const strong = [], weak = [], study = [];
+  qs.forEach((q, i) => {
+    q.rubric.forEach((c, j) => { if (graded[i].crit[j].hit) strong.push(L(c.label)); else weak.push({ n: i + 1, label: L(c.label), id: c.id }); });
+    if (graded[i].crit.some(c => !c.hit)) { const u = L(q.unit) || T.qLabel(i + 1); if (!study.includes(u)) study.push(u); }
+  });
+  const none = html`<p className="dim" style=${{ margin: 0, fontSize: '14px' }}>${T.none}</p>`;
+
+  return html`<${Fragment}>
+    <${PageHead} k="03" s=${true} label=${T.eyebrow.result} title=${T.resultH} />
+    <div className="rise" style=${{ '--d': 2 }}>
+      <${Beam} size="md" colorVariant=${tone === 'good' ? 'ocean' : tone === 'mid' ? 'gold' : 'sunset'} theme="dark" active=${beamOn} duration=${2.2} brightness=${2} saturation=${1.4} glowSize=${1.4}>
+        <section className="glass hero spot">
+          <${Gauge} pct=${pct} tone=${tone} />
+          <div className="hero-txt">
+            <div className="chips">
+              <span className="tag tag-neutral">${r.name}</span>
+              <span className="tag tag-neutral">${T.langName[r.lang] || ''}</span>
+              <span className="tag tag-neutral num">${r.at}</span>
+              ${reviews > 0 && html`<span className="tag tag-violet"><${Icon} name="eye" size=${13} />${T.reviewCount(reviews)}</span>`}
+            </div>
+            <p className="hraw"><${CountUp} to=${earned} delay=${350} ms=${1500} /><span className="dim"> / ${max}${T.ptsUnit}</span></p>
+            <p className="hband">${T.band[band]}</p>
+          </div>
+        </section>
+      <//>
+    </div>
+    <div className="sum3">
+      <section className="glass card rise spot" style=${{ '--d': 4 }}>
+        <div className="sumh"><span className="ibox i-mint"><${Icon} name="check" size=${15} sw=${2.2} /></span>${T.strong}</div>
+        ${strong.length ? html`<div className="chips">${strong.map((s, k) => html`<span key=${k} className="tag tag-mint">${s}</span>`)}</div>` : none}
+      </section>
+      <section className="glass card rise spot" style=${{ '--d': 5 }}>
+        <div className="sumh"><span className="ibox i-amber"><${Icon} name="minus" size=${15} sw=${2.4} /></span>${T.weak}</div>
+        ${weak.length ? html`<ul className="slist">${weak.map(w => html`<li key=${w.id}><span className="q">Q${w.n}</span>${w.label}</li>`)}</ul>` : none}
+      </section>
+      <section className="glass card rise spot" style=${{ '--d': 6 }}>
+        <div className="sumh"><span className="ibox i-accent"><${Icon} name="book" size=${15} /></span>${T.study}</div>
+        ${study.length ? html`<ul className="slist">${study.map(s => html`<li key=${s}>${s}</li>`)}</ul>` : none}
+      </section>
+    </div>
+    <div className="stack">${qs.map((q, i) => html`<${QResult} key=${q.id} q=${q} g=${graded[i]} i=${i} />`)}</div>
+    <div className="actions">
+      <a className="btn btn-glass" href="#take">${T.retake}</a>
+      <a className="btn btn-white btn-lg" href="#report">${T.toReport}<span className="arr"><${Icon} name="arrow" size=${16} /></span></a>
+    </div>
+  <//>`;
+}
+
+/* ───────── 4. 분석 ───────── */
+function ReportView() {
+  const { st, T, L, flash } = useApp();
+  const qs = st.exam.questions;
+  if (!qs.length) return html`<${Fragment}><${PageHead} k="04" label=${T.eyebrow.report} title=${T.reportH} /><${Empty} icon="build" text=${T.noQ} href="#build" cta=${T.goBuild} /><//>`;
+
+  const subs = allSubmissions(st), n = subs.length;
+  const pctOf = s => (s.max ? s.earned / s.max * 100 : 0);
+  const avg = Math.round(sum(subs, pctOf) / n);
+  const me = subs.find(s => s.me);
+  const qStats = qs.map((q, i) => { const m = qMax(q), a = sum(subs, s => s.perQ[i].earned) / n; return { q, i, avg: a, max: m, pct: m ? Math.round(a / m * 100) : 0 }; });
+  const cStats = qs.flatMap((q, i) => q.rubric.map((c, j) => {
+    const hits = subs.filter(s => s.perQ[i].crit[j] && s.perQ[i].crit[j].hit).length;
+    return { q, i, c, hits, rate: Math.round(hits / n * 100) };
+  })).sort((a, b) => a.rate - b.rate);
+  const reviewN = subs.filter(s => s.review).length;
+  const enN = subs.filter(s => s.lang === 'en').length;
+  const lowQ = [...qStats].sort((a, b) => a.pct - b.pct)[0];
+  const lowC = cStats[0];
+  const bins = Array(10).fill(0);
+  subs.forEach(s => { bins[Math.min(9, Math.floor(pctOf(s) / 10))]++; });
+  const myBin = me ? Math.min(9, Math.floor(pctOf(me) / 10)) : -1;
+  const maxBin = Math.max(1, ...bins);
+
+  const ai = [T.ai1(avg, T.qLabel(lowQ.i + 1), lowQ.pct)];
+  if (lowC) ai.push(T.ai2(L(lowC.c.label), n, n - lowC.hits, L(lowC.q.unit) || T.qLabel(lowC.i + 1)));
+  if (reviewN) ai.push(T.ai3(reviewN));
+  if (enN) ai.push(T.ai4(enN));
+
+  return html`<${Fragment}>
+    <${PageHead} k="04" label=${T.eyebrow.report} title=${T.reportH} sub=${T.reportP} />
+    <div className="kpis">
+      <section className="glass kpi rise spot" style=${{ '--d': 3 }}><div className="k">${T.kTakers}</div><div className="v"><${CountUp} to=${n} /><small>${T.unitPeople}</small></div><div className="sub">${T.enSub(enN)}</div></section>
+      <section className="glass kpi rise spot" style=${{ '--d': 4 }}><div className="k">${T.kAvg}</div><div className="v"><${CountUp} to=${avg} /><small>/100</small></div><div className="sub">${me ? T.meSub(Math.round(pctOf(me))) : ' '}</div></section>
+      <section className="glass kpi rise spot" style=${{ '--d': 5 }}><div className="k">${T.kReview}</div><div className="v" style=${{ color: 'var(--violet)' }}><${CountUp} to=${reviewN} /><small>${T.unitCases}</small></div><div className="sub">${T.reviewSub}</div></section>
+      <section className="glass kpi rise spot" style=${{ '--d': 6 }}><div className="k">${T.kWeak}</div><div className="v t">${lowC ? L(lowC.c.label) : '—'}</div><div className="sub">${lowC ? `Q${lowC.i + 1} · ${T.achieved(lowC.rate)}` : ''}</div></section>
+    </div>
+    <div className="rise" style=${{ '--d': 7 }}>
+      <${Beam} size="line" colorVariant="ocean" theme="dark" duration=${3.4} brightness=${1.8}>
+        <section className="glass ai">
+          <div className="ai-h"><span className="mini-orb"></span><b>${T.aiH}</b><span className="tag tag-neutral">${T.aiTag}</span></div>
+          <ul>${ai.map((x, k) => html`<li key=${k} className="rise" style=${{ '--d': 9 + k }}>${x}</li>`)}</ul>
+        </section>
+      <//>
+    </div>
+    <div className="grid2">
+      <section className="glass card rise spot" style=${{ '--d': 9 }}>
+        <div className="ch"><h2>${T.dist}</h2><span>${T.distSub}</span></div>
+        <div className="hist">${bins.map((b, k) => html`<div key=${k} className=${'col' + (k === myBin ? ' me' : '')}>
+          <span className="cnt">${k === myBin ? T.me : (b || '')}</span>
+          <div className="bar2" style=${{ height: `${Math.max(b ? 6 : 2, b / maxBin * 100 - 12)}%`, '--d': k, opacity: b ? 1 : .35 }}></div>
+        </div>`)}</div>
+        <div className="hx">${bins.map((_, k) => html`<span key=${k}>${k * 10}</span>`)}</div>
+      </section>
+      <section className="glass card rise spot" style=${{ '--d': 10 }}>
+        <div className="ch"><h2>${T.byQ}</h2><span>${T.avgUnit}</span></div>
+        ${qStats.map(s => html`<div key=${s.q.id} className="hbar">
+          <div className="row"><span className="l"><span className="q">Q${s.i + 1}</span>${L(s.q.text)}</span><span className="v">${s.avg.toFixed(1)}<span className="dim"> / ${s.max}</span></span></div>
+          <div className=${'line' + (s.pct < 50 ? ' warn' : '')} style=${{ '--w': s.pct + '%', '--d': 10 + s.i }}><i></i></div>
+        </div>`)}
+      </section>
+    </div>
+    <section className="glass card rise spot" style=${{ '--d': 11 }}>
+      <div className="ch"><h2>${T.byC}</h2><span>${T.lowFirst}</span></div>
+      <div className="crit2">${cStats.map((s, k) => html`<div key=${s.c.id} className="hbar">
+        <div className="row"><span className="l"><span className="q">Q${s.i + 1}</span>${L(s.c.label)}</span><span className="v">${s.rate}%</span></div>
+        <div className=${'line' + (s.rate < 50 ? ' warn' : '')} style=${{ '--w': s.rate + '%', '--d': 11 + k }}><i></i></div>
+      </div>`)}</div>
+    </section>
+    <section className="glass tbl-card rise" style=${{ '--d': 12 }}>
+      <div className="tbl-h"><h2>${T.kTakers} <span className="dim num">${n}</span></h2>
+        <button type="button" className="btn btn-glass btn-sm" onClick=${() => { exportCsv(st, T); flash(T.exported); }}><${Icon} name="download" size=${15} />${T.exportCsv}</button></div>
+      <table className="tbl">
+        <thead><tr><th>${T.tName}</th><th className="hide-sm">${T.tLang}</th><th className="hide-sm">${T.tAt}</th><th className="r">${T.tScore}</th><th>${T.tState}</th></tr></thead>
+        <tbody>${subs.map((s, k) => html`<tr key=${s.name + k} className=${s.me ? 'me' : ''} style=${{ '--d': k }}>
+          <td><span className="who"><span className="av" style=${{ '--h': hueOf(s.name) }}>${s.name.slice(0, 1)}</span><span>${s.name}</span>${s.me && html`<span className="tag tag-mint">${T.me}</span>`}</span></td>
+          <td className="hide-sm dim">${T.langName[s.lang] || ''}</td>
+          <td className="hide-sm dim num">${s.at}</td>
+          <td className="r"><b>${s.earned}</b><span className="dim"> / ${s.max}</span></td>
+          <td>${s.review ? html`<span className="st rv"><i></i>${T.sReview}</span>` : html`<span className="st ok"><i></i>${T.sDone}</span>`}</td>
+        </tr>`)}</tbody>
+      </table>
+    </section>
+  <//>`;
+}
+
+/* ───────── 앱 ───────── */
+function App() {
+  const [st, setSt] = useState(loadState);
+  const [view, setView] = useState(viewFromHash);
+  const [editing, setEditing] = useState([]);
+  const [focusQ, setFocusQ] = useState(null);
+  const [grading, setGrading] = useState(false);
+  const [toast, setToast] = useState(null);
+  const T = I18N[st.lang];
+  const L = o => (o ? (o[st.lang] || o.ko || o.en || '') : '');
+
+  useEffect(() => { saveState(st); }, [st]);
+  useEffect(() => {
+    const on = () => { setView(viewFromHash()); window.scrollTo(0, 0); };
+    window.addEventListener('hashchange', on);
+    return () => window.removeEventListener('hashchange', on);
+  }, []);
+  useEffect(() => { document.documentElement.lang = st.lang; document.title = `${T.nav[view].t} · rubric`; }, [st.lang, view]);
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 2300);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  const update = fn => setSt(prev => { const next = clone(prev); fn(next); return next; });
+  const go = v => { if (location.hash === '#' + v) { setView(v); window.scrollTo(0, 0); } else location.hash = '#' + v; };
+  const flash = msg => setToast({ msg, id: Date.now() });
+  const submit = () => {
+    if (grading) return;
+    setFocusQ(null);
+    setGrading(true);
+    setTimeout(() => {
+      setSt(prev => ({ ...prev, result: { name: prev.taker.trim() || I18N[prev.lang].meDefault, lang: prev.lang, at: nowStr(), answers: { ...prev.answers } } }));
+      setGrading(false);
+      go('result');
+    }, REDUCED ? 400 : GRADE_MS);
+  };
+  const reset = () => {
+    try { localStorage.removeItem(STORE); } catch (e) { /* 무시 */ }
+    setSt(s => ({ ...freshState(), lang: s.lang }));
+    setEditing([]);
+    go('build');
+    flash(T.resetDone);
+  };
+  const app = { st, T, L, view, go, update, editing, setEditing, focusQ, setFocusQ, grading, submit, flash, reset, setLang: l => update(s => { s.lang = l; }) };
+  const View = view === 'build' ? BuildView : view === 'take' ? TakeView : view === 'result' ? ResultView : ReportView;
+
+  return html`<${Ctx.Provider} value=${app}>
+    <${Sidebar} />
+    <${TopBar} />
+    <div className="shell">
+      <main className="content" key=${view}>
+        <${View} />
+        <${Foot} />
+      </main>
+    </div>
+    <${TabBar} />
+    ${grading && html`<${GradingOverlay} />`}
+    ${toast && html`<div className="toast glass" key=${toast.id} role="status">${toast.msg}</div>`}
+  <//>`;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(html`<${App} />`);
+})();
+</script>
+</body>
+</html>

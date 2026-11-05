@@ -1,0 +1,1001 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>바로채점 · AI 주관식 채점 데모</title>
+<meta name="description" content="문제 등록 → 응시(한/영) → 채점 결과 → 분석까지 보여 주는 시연용 목업">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f5f6fa; --surface:#fff; --ink:#191c27; --ink-2:#3d4354; --muted:#6a7186; --line:#e3e6ee; --line-2:#eef0f5; --soft:#fafbfd;
+  --primary:#3b5bdb; --primary-ink:#2f4ac0; --primary-weak:#edf1ff;
+  --good:#2b8a3e; --good-weak:#ebf8ee; --warn:#d9480f; --warn-weak:#fff3eb; --review:#9c36b5; --review-weak:#f8f0fc;
+  --radius:14px; --shadow:0 1px 2px rgba(20,24,40,.05),0 4px 16px rgba(20,24,40,.05); --gutter:16px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Segoe UI",sans-serif;word-break:keep-all;overflow-wrap:anywhere;-webkit-font-smoothing:antialiased}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:inherit}
+:focus-visible{outline:3px solid rgba(59,91,219,.35);outline-offset:2px}
+svg{display:block}
+
+/* 머리글 */
+.top{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.94);backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line)}
+.top-in{max-width:1080px;margin:0 auto;padding:10px var(--gutter);display:flex;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:8px;text-decoration:none;font-weight:800;font-size:17px;letter-spacing:-.01em;white-space:nowrap}
+.logo{width:28px;height:28px;border-radius:8px;background:var(--primary);color:#fff;display:grid;place-items:center}
+.logo svg{width:16px;height:16px}
+.chip-demo{font-size:11px;font-weight:800;color:var(--primary);background:var(--primary-weak);border-radius:999px;padding:2px 8px;letter-spacing:.03em}
+.tabs{display:none;gap:4px;margin-left:12px}
+.tab{text-decoration:none;padding:8px 12px;border-radius:10px;color:var(--muted);font-weight:700;font-size:14.5px;display:flex;align-items:center;gap:8px}
+.tab:hover{background:var(--line-2)}
+.tab .n{width:20px;height:20px;border-radius:50%;background:var(--line-2);font-size:11px;display:grid;place-items:center;color:var(--muted)}
+.tab[aria-current=page]{background:var(--primary-weak);color:var(--primary-ink)}
+.tab[aria-current=page] .n{background:var(--primary);color:#fff}
+.lang{margin-left:auto;display:flex;background:var(--line-2);border-radius:10px;padding:3px}
+.lang button{border:0;background:none;padding:5px 10px;border-radius:8px;font-size:13px;font-weight:800;color:var(--muted);min-height:30px}
+.lang button[aria-pressed=true]{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+
+.notice{max-width:1080px;margin:12px auto 0;padding:0 var(--gutter)}
+.notice-in{display:flex;gap:8px;align-items:flex-start;background:#fffbea;border:1px solid #f3e2a6;color:#6b5200;border-radius:10px;padding:9px 12px;font-size:13px;line-height:1.5}
+.notice-in svg{width:16px;height:16px;flex:none;margin-top:1px}
+
+.wrap{max-width:1080px;margin:0 auto;padding:12px var(--gutter) calc(96px + env(safe-area-inset-bottom))}
+
+/* 아래 메뉴(휴대폰) */
+.bnav{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(255,255,255,.97);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+.bnav a{text-decoration:none;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11.5px;font-weight:700;color:var(--muted);padding:5px 0;border-radius:10px}
+.bnav svg{width:22px;height:22px}
+.bnav a[aria-current=page]{color:var(--primary)}
+
+@media (min-width:860px){
+  .tabs{display:flex}
+  .bnav{display:none}
+  .wrap{padding-bottom:48px}
+}
+
+/* 공통 */
+.page-head{margin:10px 0 16px}
+.page-head h1{margin:8px 0 4px;font-size:22px;line-height:1.35;letter-spacing:-.02em}
+.page-head p{margin:0;color:var(--muted);font-size:14px}
+@media (min-width:860px){.page-head h1{font-size:26px}}
+.role{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;padding:3px 10px;border-radius:999px}
+.role-t{background:var(--primary-weak);color:var(--primary-ink)}
+.role-s{background:var(--good-weak);color:var(--good)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:12px}
+@media (min-width:860px){.card{padding:20px}}
+.card-h{font-size:15px;font-weight:800;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid transparent;border-radius:10px;padding:10px 16px;font-weight:700;font-size:15px;text-decoration:none;line-height:1.2;min-height:44px}
+.btn svg{width:16px;height:16px}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-ink)}
+.btn-ghost{background:#fff;border-color:var(--line);color:var(--ink-2)}
+.btn-ghost:hover{border-color:#cfd4e0;background:var(--soft)}
+.btn-sm{min-height:34px;padding:6px 12px;font-size:13px;border-radius:8px}
+.btn-lg{min-height:52px;font-size:16px;padding:12px 22px}
+.row-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin:16px 0}
+@media (max-width:559px){.row-actions .btn{flex:1 1 100%}}
+.field{display:block;margin-bottom:12px}
+.field>span{display:block;font-size:12.5px;font-weight:700;color:var(--muted);margin-bottom:6px}
+input:not([type]),input[type=text],input[type=number],textarea{width:100%;border:1px solid var(--line);border-radius:10px;background:#fff;padding:10px 12px;font-size:16px;line-height:1.5}
+textarea{resize:vertical}
+input:focus,textarea:focus{border-color:var(--primary);outline:none;box-shadow:0 0 0 3px rgba(59,91,219,.15)}
+.grid2{display:grid;gap:0 12px}
+@media (min-width:700px){.grid2{grid-template-columns:1fr 1fr}}
+.small{font-size:13px}
+.muted{color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;border-radius:999px;padding:3px 9px;white-space:nowrap}
+.chip svg{width:13px;height:13px}
+.chip-review{background:var(--review-weak);color:var(--review)}
+.chip-done{background:var(--good-weak);color:var(--good)}
+.chip-me{background:var(--primary);color:#fff}
+.ic{display:grid;place-items:center}
+.ic svg{width:15px;height:15px}
+.link{border:0;background:none;color:var(--muted);text-decoration:underline;font-size:12.5px;padding:4px 0}
+.link-danger{border:0;background:none;color:#c92a2a;font-size:13px;font-weight:700;padding:6px 0}
+
+/* 1. 출제 */
+.exam-count{font-size:13px;font-weight:700;color:var(--muted)}
+.q-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.q-badge{font-size:12px;font-weight:800;color:var(--primary-ink);background:var(--primary-weak);padding:3px 9px;border-radius:7px;white-space:nowrap}
+.q-pts{font-size:13px;font-weight:800;color:var(--muted);white-space:nowrap}
+.q-head .btn{margin-left:auto}
+.q-text{margin:0 0 4px;font-size:16px;font-weight:700;line-height:1.55}
+.q-alt{margin:0 0 4px;font-size:13px;color:var(--muted)}
+.q-alt b{font-size:10.5px;border:1px solid var(--line);border-radius:5px;padding:0 5px;margin-right:6px;vertical-align:1px}
+.rubric-h{font-size:12.5px;font-weight:800;color:var(--muted);margin:14px 0 8px}
+.rubric{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+@media (min-width:860px){.rubric{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}}
+.rubric li{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line-2);background:var(--soft);border-radius:10px}
+.pts-badge{flex:none;min-width:40px;text-align:center;font-size:12px;font-weight:800;color:#fff;background:var(--ink-2);border-radius:7px;padding:3px 6px}
+.c-label{font-weight:700;font-size:14px;margin-bottom:5px}
+.kws{display:flex;flex-wrap:wrap;gap:4px}
+.kw{font-size:12px;color:var(--ink-2);background:#fff;border:1px solid var(--line);border-radius:6px;padding:0 7px}
+.kw.more{color:var(--muted)}
+.help{font-size:12.5px;color:var(--muted);margin:-2px 0 10px;line-height:1.55}
+.c-edit{border:1px solid var(--line);border-radius:12px;padding:12px 12px 4px;margin-bottom:10px;background:var(--soft)}
+.c-edit-grid{display:grid;gap:0 10px;grid-template-columns:minmax(0,1fr) 84px}
+.c-edit-grid .f-ko{grid-column:1/-1}
+@media (min-width:700px){.c-edit-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 84px}.c-edit-grid .f-ko{grid-column:auto}}
+.c-edit-foot{display:flex;justify-content:flex-end;margin-top:-6px}
+.edit-actions{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:4px}
+
+/* 2. 응시 */
+.narrow{max-width:760px;margin-inline:auto}
+.take-top{display:grid;gap:0 16px}
+@media (min-width:700px){.take-top{grid-template-columns:minmax(0,1fr) auto;align-items:start}}
+.seg{display:inline-flex;background:var(--line-2);border-radius:10px;padding:3px}
+.seg button{border:0;background:none;padding:8px 16px;border-radius:8px;font-weight:800;font-size:14px;color:var(--muted);min-height:40px}
+.seg button[aria-pressed=true]{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.q-take-head{display:flex;gap:10px;align-items:flex-start;margin-bottom:12px}
+.q-n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:800;margin-top:1px}
+.q-take-head .q-text{flex:1;min-width:0;margin:0}
+.q-take-head .q-pts{flex:none;margin-top:3px}
+.answer{min-height:120px}
+.count{text-align:right;font-size:12px;color:var(--muted);margin-top:4px}
+.empty{text-align:center;padding:36px 16px}
+.empty .ic{width:48px;height:48px;border-radius:14px;background:var(--line-2);color:var(--muted);margin:0 auto 10px}
+.empty .ic svg{width:24px;height:24px}
+.empty p{margin:0 0 16px;color:var(--muted)}
+
+/* 채점 중 */
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(245,246,250,.82);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:grid;place-items:center;padding:16px}
+.ov-card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 40px rgba(20,24,40,.12);padding:24px;width:min(340px,100%);text-align:center}
+.spinner{width:36px;height:36px;border:3px solid var(--primary-weak);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.steps{list-style:none;padding:0;margin:16px 0 0;text-align:left;display:grid;gap:8px}
+.steps li{display:flex;gap:8px;align-items:center;color:var(--muted);font-size:14px}
+.steps .dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;flex:none;font-size:11px;font-weight:800;color:#fff}
+.steps li.on{color:var(--ink);font-weight:700}
+.steps li.on .dot{border-color:var(--primary)}
+.steps li.ok .dot{background:var(--good);border-color:var(--good)}
+.steps li.ok .dot::after{content:"✓"}
+
+/* 3. 결과 */
+.hero{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.gauge{position:relative;width:124px;height:124px;flex:none}
+.gauge svg{width:100%;height:100%;transform:rotate(-90deg)}
+.gauge .num{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.gauge .num b{font-size:36px;letter-spacing:-.03em}
+.gauge .num small{font-size:12px;color:var(--muted);margin-top:5px;font-weight:700}
+.hero-txt{flex:1 1 220px;min-width:0}
+.hero .meta{font-size:13px;color:var(--muted)}
+.hero .raw{font-size:16px;font-weight:800;margin:4px 0 2px}
+.hero .band{margin:4px 0 8px;font-size:15px}
+.sum-grid{display:grid;gap:12px;margin-bottom:12px}
+@media (min-width:860px){.sum-grid{grid-template-columns:repeat(3,1fr)}}
+.sum-grid .card{margin:0}
+.sum-h{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px;margin-bottom:10px}
+.sum-h .ic{width:24px;height:24px;border-radius:7px;color:#fff}
+.sum-list{margin:0;padding:0;list-style:none;display:grid;gap:6px;font-size:14px}
+.sum-list .q{font-size:12px;font-weight:800;color:var(--muted);margin-right:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.qr-head{display:flex;align-items:center;gap:8px}
+.qr-score{margin-left:auto;font-size:22px;font-weight:800;letter-spacing:-.02em;white-space:nowrap}
+.qr-score small{font-size:13px;color:var(--muted);font-weight:700}
+.bar{height:8px;background:var(--line-2);border-radius:99px;overflow:hidden;margin:10px 0 12px}
+.bar i{display:block;height:100%;background:var(--primary);border-radius:99px}
+.bar.warn i{background:var(--warn)}
+.q-text.sm{font-size:14.5px;color:var(--ink-2)}
+.qr-body{display:grid;gap:14px;margin-top:10px}
+@media (min-width:860px){.qr-body{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px}}
+.lbl-sm{font-size:12.5px;font-weight:800;color:var(--muted);margin-bottom:6px}
+.answer-view{white-space:pre-wrap;background:var(--soft);border:1px solid var(--line-2);border-radius:10px;padding:12px;font-size:15px;line-height:1.75}
+.answer-view mark{background:#d3f9d8;color:inherit;border-radius:4px;padding:0 2px;box-shadow:inset 0 -2px 0 #8ce99a}
+.answer-view.none{color:var(--muted)}
+.review-note{display:flex;gap:8px;align-items:flex-start;margin-top:8px;font-size:13px;color:var(--review);background:var(--review-weak);border-radius:8px;padding:8px 10px}
+.review-note svg{width:15px;height:15px;flex:none;margin-top:2px}
+.crit-res{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.crit-res li{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:10px;border:1px solid}
+.crit-res li.ok{background:var(--good-weak);border-color:#c6ead0}
+.crit-res li.miss{background:var(--warn-weak);border-color:#ffd8c2}
+.crit-res .ic{flex:none;width:22px;height:22px;border-radius:50%;color:#fff;margin-top:1px}
+.crit-res .ic svg{width:13px;height:13px}
+.crit-res li.ok .ic{background:var(--good)}
+.crit-res li.miss .ic{background:var(--warn)}
+.crit-res .body{flex:1;min-width:0}
+.cr-top{display:flex;gap:8px;align-items:baseline;justify-content:space-between}
+.cr-top b{font-size:14px}
+.cr-pts{font-size:13px;font-weight:800;white-space:nowrap}
+.crit-res li.ok .cr-pts{color:var(--good)}
+.crit-res li.miss .cr-pts{color:var(--warn)}
+.tip{color:#9a3a06}
+details.prompt{margin-top:14px;border-top:1px dashed var(--line);padding-top:10px}
+details.prompt summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--primary-ink)}
+details.prompt pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#11141c;color:#dbe1f0;border-radius:10px;padding:12px;font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;margin:10px 0 0}
+
+/* 4. 분석 */
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+@media (min-width:860px){.kpis{grid-template-columns:repeat(4,1fr)}}
+.kpi{margin:0;padding:14px 16px}
+.kpi .k{font-size:12.5px;color:var(--muted);font-weight:700}
+.kpi .v{font-size:26px;font-weight:800;letter-spacing:-.02em;margin-top:2px;line-height:1.25}
+.kpi .v.txt{font-size:15.5px;line-height:1.4;margin-top:6px}
+.kpi .v small{font-size:13px;color:var(--muted);font-weight:700}
+.ai-card{border-color:#d6defc;background:linear-gradient(180deg,#f7f9ff,#fff 60%)}
+.ai-card ul{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.ai-card li{position:relative;padding-left:16px;font-size:14.5px}
+.ai-card li::before{content:"";position:absolute;left:3px;top:.68em;width:6px;height:6px;border-radius:50%;background:var(--primary)}
+.ai-card .card-h .ic{width:24px;height:24px;border-radius:7px;background:var(--primary);color:#fff}
+.two{display:grid;gap:12px;margin-bottom:12px}
+@media (min-width:860px){.two{grid-template-columns:1fr 1fr;align-items:start}}
+.two .card{margin:0}
+.hbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;margin-bottom:12px;font-size:13.5px}
+.hbar:last-child{margin-bottom:0}
+.hbar .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hbar .lbl .q{font-size:11.5px;font-weight:800;color:var(--muted);margin-right:6px}
+.hbar .val{font-weight:800;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.hbar .bar{grid-column:1/-1;margin:0}
+.tbl-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.tbl-head .card-h{margin:0}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{text-align:left;font-size:12.5px;color:var(--muted);font-weight:700;padding:8px 10px;border-bottom:1px solid var(--line)}
+.tbl td{padding:10px;border-bottom:1px solid var(--line-2);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tr.me td{background:var(--primary-weak)}
+.tbl .t-num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbl .name{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+@media (max-width:559px){.hide-sm{display:none}.tbl td,.tbl th{padding-left:6px;padding-right:6px}}
+
+.foot{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap;color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px;margin-top:24px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="#build"><span class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></span><span id="brandName">바로채점</span><span class="chip-demo">DEMO</span></a>
+    <nav class="tabs" id="tabs"></nav>
+    <div class="lang" id="lang" role="group" aria-label="Language"></div>
+  </div>
+</header>
+<div class="notice"><div class="notice-in" id="notice"></div></div>
+<main class="wrap">
+  <div id="app"></div>
+  <footer class="foot" id="foot"></footer>
+</main>
+<nav class="bnav" id="bnav"></nav>
+<noscript><p style="padding:16px">이 시연 화면은 자바스크립트가 켜져 있어야 보여요.</p></noscript>
+
+<script>
+(() => {
+'use strict';
+
+const STORE = 'barochaejeom-demo-v1';
+const VIEWS = ['build', 'take', 'result', 'report'];
+
+/* ───────── 화면 글자 (한/영) ───────── */
+const I18N = {
+  ko: {
+    brand: '바로채점',
+    notice: '시연용 화면이에요. 지금은 AI 대신 <b>채점 기준표의 핵심어</b>로 점수를 매겨요. 실제 서비스에선 같은 기준표를 AI에게 보내 채점·피드백을 받아요.',
+    nav: { build: '출제', take: '응시', result: '결과', report: '분석' },
+    navLabel: '주요 메뉴',
+    roleTeacher: '선생님 화면', roleStudent: '학생 화면',
+    buildH: '문제와 채점 기준 등록',
+    buildP: '문항마다 “무엇을 쓰면 몇 점”인지 기준표를 만들어요. 채점과 피드백은 모두 이 기준표를 따라요.',
+    examTitle: '시험 이름',
+    qLabel: n => `문항 ${n}`, pts: n => `${n}점`,
+    qCount: (n, tot) => `${n}문항 · 총 ${tot}점`,
+    edit: '수정', done: '완료', delQ: '문항 삭제', delC: '이 기준 삭제',
+    qKo: '문제 (한국어)', qEn: '문제 (English)',
+    rubricH: '채점 기준', cKo: '기준 (한국어)', cEn: '기준 (English)', cPts: '점수', cKw: '인정하는 표현 · 쉼표로 구분',
+    kwHelp: '한국어·영어 표현을 같이 넣어 두면 어느 언어로 답해도 채점돼요. 앞에 ^를 붙이면 단어 첫머리만 인정해요. (예: ^물 → ‘식물’ 안의 ‘물’은 제외)',
+    addC: '+ 기준 추가', addQ: '+ 문항 추가', toTake: '학생 응시 화면 보기',
+    emptyQ: '(문제를 입력하세요)', noQ: '출제 화면에서 문항을 먼저 추가해 주세요.',
+    takeMeta: (n, tot, m) => `${n}문항 · 총 ${tot}점 · 약 ${m}분`,
+    name: '이름', namePh: '이름을 입력하세요', langPick: '응시 언어',
+    answerPh: '여기에 답을 써 주세요.', chars: n => `${n}자`,
+    fillSample: '예시 답안 채우기', submit: '제출하고 채점 받기',
+    grading: '채점하고 있어요', gradingSteps: ['답안 읽기', '채점 기준과 비교하기', '피드백 쓰기'],
+    meDefault: '나 (데모)',
+    resultH: '채점 결과', resultEmpty: '아직 제출한 답안이 없어요.', goTake: '응시하러 가기',
+    myScore: '내 점수', outOf: (e, m) => `${m}점 만점에 ${e}점`, per100: '100점 환산',
+    band: [
+      '핵심 개념을 다시 복습해 보면 좋겠어요. 아래 추천 복습부터 시작해 보세요.',
+      '기본 개념은 알고 있어요. 보완할 점을 하나씩 확인해 보세요.',
+      '핵심은 잘 잡았어요. 빠진 부분만 채우면 만점이에요.',
+      '핵심을 거의 모두 정확하게 썼어요. 아주 잘했어요!'
+    ],
+    reviewCount: n => `선생님 확인 ${n}건`,
+    strong: '잘한 부분', weak: '보완할 부분', study: '추천 복습', none: '없음',
+    myAnswer: '내 답안', noAnswer: '답을 쓰지 않았어요.', criteria: '기준별 채점',
+    reviewShort: '답이 짧아서 선생님이 한 번 더 확인해요.',
+    reviewUnmatched: '기준표와 다른 표현으로 썼을 수 있어서 선생님이 한 번 더 확인해요.',
+    found: '찾은 표현', tipDefault: l => `‘${l}’에 해당하는 내용을 답에 넣어 주세요.`,
+    promptSum: '실제 서비스에서 AI에게 보내는 요청 보기',
+    retake: '다시 풀기', toReport: '선생님 분석 화면 보기',
+    reportH: '응시 결과 분석', reportP: '응시자 전체 결과를 모아, 어떤 부분을 많이 놓쳤는지 보여 줘요. (가짜 응시자 데이터)',
+    kTakers: '응시자', kAvg: '평균 (100점 환산)', kReview: '선생님 확인 필요', kWeak: '가장 많이 놓친 기준',
+    people: n => `${n}<small>명</small>`, cases: n => `${n}<small>건</small>`, score100: n => `${n}<small>점</small>`,
+    achieved: p => `달성 ${p}%`,
+    aiH: 'AI 분석 요약',
+    ai1: (avg, q, p) => `평균은 100점 만점에 ${avg}점이에요. 가장 어려웠던 문항은 ${q}(평균 달성률 ${p}%)이에요.`,
+    ai2: (label, n, miss, unit) => `‘${label}’ 기준을 ${n}명 중 ${miss}명이 놓쳤어요. 다음 수업에서 <b>${unit}</b> 복습을 추천해요.`,
+    ai3: k => `확인이 필요한 답안 ${k}건은 선생님이 확인한 뒤 점수를 확정해요.`,
+    ai4: e => `영어로 응시한 ${e}명도 같은 기준표로 채점했어요.`,
+    byQ: '문항별 평균', byC: '채점 기준별 달성률 (낮은 순)',
+    tName: '이름', tLang: '언어', tAt: '제출', tScore: '점수', tState: '상태',
+    sDone: '채점 완료', sReview: '확인 필요', me: '방금 응시',
+    exportCsv: '엑셀(CSV) 내려받기',
+    reset: '처음 상태로 되돌리기', resetConfirm: '한 번 더 누르면 처음 상태로 돌아가요',
+    foot: '가짜 데이터로 만든 시연용 목업이에요.',
+    langName: { ko: '한국어', en: '영어' }
+  },
+  en: {
+    brand: 'BaroGrade',
+    notice: 'Demo screen. For now, scores come from the <b>key phrases in the rubric</b> instead of AI. In the real service, the same rubric is sent to an AI to grade and write feedback.',
+    nav: { build: 'Create', take: 'Take test', result: 'Result', report: 'Insights' },
+    navLabel: 'Main menu',
+    roleTeacher: 'Teacher view', roleStudent: 'Student view',
+    buildH: 'Questions & rubric',
+    buildP: 'For each question, set a rubric: what earns how many points. Grading and feedback both follow this rubric.',
+    examTitle: 'Test name',
+    qLabel: n => `Q${n}`, pts: n => (n === 1 ? '1 pt' : `${n} pts`),
+    qCount: (n, tot) => `${n} questions · ${tot} pts total`,
+    edit: 'Edit', done: 'Done', delQ: 'Delete question', delC: 'Delete criterion',
+    qKo: 'Question (Korean)', qEn: 'Question (English)',
+    rubricH: 'Rubric', cKo: 'Criterion (Korean)', cEn: 'Criterion (English)', cPts: 'Points', cKw: 'Accepted phrases · comma-separated',
+    kwHelp: 'Add both Korean and English phrases so answers in either language are graded. A leading ^ matches only at the start of a word (e.g. ^o2 won’t match inside “co2”).',
+    addC: '+ Add criterion', addQ: '+ Add question', toTake: 'Open student test view',
+    emptyQ: '(Enter the question)', noQ: 'Add a question in the Create screen first.',
+    takeMeta: (n, tot, m) => `${n} questions · ${tot} pts · about ${m} min`,
+    name: 'Name', namePh: 'Enter your name', langPick: 'Test language',
+    answerPh: 'Write your answer here.', chars: n => `${n} chars`,
+    fillSample: 'Fill in sample answers', submit: 'Submit & get graded',
+    grading: 'Grading your answers', gradingSteps: ['Reading answers', 'Comparing with the rubric', 'Writing feedback'],
+    meDefault: 'Me (demo)',
+    resultH: 'Your result', resultEmpty: 'No answers submitted yet.', goTake: 'Take the test',
+    myScore: 'My score', outOf: (e, m) => `${e} of ${m} pts`, per100: 'out of 100',
+    band: [
+      'Review the key concepts again. Start with the suggested review below.',
+      'You know the basics. Go through the points to improve one by one.',
+      'You got the key ideas. Fill in the missing parts for a perfect score.',
+      'You covered almost every key point accurately. Great work!'
+    ],
+    reviewCount: n => `${n} teacher check${n > 1 ? 's' : ''}`,
+    strong: 'What you did well', weak: 'What to improve', study: 'Suggested review', none: 'None',
+    myAnswer: 'My answer', noAnswer: 'No answer written.', criteria: 'Scoring by criterion',
+    reviewShort: 'Your answer is short, so a teacher will double-check it.',
+    reviewUnmatched: 'You may have used different wording from the rubric, so a teacher will double-check it.',
+    found: 'Found', tipDefault: l => `Add something about “${l}” to your answer.`,
+    promptSum: 'See the request sent to the AI in the real service',
+    retake: 'Try again', toReport: 'Open teacher insights',
+    reportH: 'Test insights', reportP: 'All submissions in one place, showing which points students missed most. (Fake sample data)',
+    kTakers: 'Test takers', kAvg: 'Average (out of 100)', kReview: 'Needs teacher check', kWeak: 'Most-missed criterion',
+    people: n => `${n}`, cases: n => `${n}`, score100: n => `${n}<small>/100</small>`,
+    achieved: p => `${p}% achieved`,
+    aiH: 'AI summary',
+    ai1: (avg, q, p) => `The average is ${avg}/100. The hardest question was ${q} (${p}% achieved on average).`,
+    ai2: (label, n, miss, unit) => `${miss} of ${n} students missed “${label}”. Suggest reviewing <b>${unit}</b> in the next class.`,
+    ai3: k => `${k} answer${k > 1 ? 's need' : ' needs'} a teacher check before the score is final.`,
+    ai4: e => `${e} student${e > 1 ? 's' : ''} took the test in English and ${e > 1 ? 'were' : 'was'} graded with the same rubric.`,
+    byQ: 'Average by question', byC: 'Criteria achieved (lowest first)',
+    tName: 'Name', tLang: 'Language', tAt: 'Submitted', tScore: 'Score', tState: 'Status',
+    sDone: 'Graded', sReview: 'Check needed', me: 'Just now',
+    exportCsv: 'Download CSV (Excel)',
+    reset: 'Reset demo', resetConfirm: 'Click again to reset everything',
+    foot: 'Demo mockup built with fake data.',
+    langName: { ko: 'Korean', en: 'English' }
+  }
+};
+
+/* ───────── 예시 시험 (rate는 가짜 응시자 데이터를 만들 때만 씀) ───────── */
+const SEED_EXAM = {
+  title: { ko: '중학 과학 서술형 평가 — 광합성과 상태 변화', en: 'Middle School Science Written Test — Photosynthesis & Changes of State' },
+  questions: [
+    {
+      id: 'q1',
+      unit: { ko: '교재 2단원 · 광합성', en: 'Textbook Unit 2 · Photosynthesis' },
+      text: { ko: '식물이 광합성을 할 때 필요한 것과, 광합성으로 만들어지는 것을 모두 쓰시오.', en: 'List everything a plant needs for photosynthesis and everything photosynthesis produces.' },
+      rubric: [
+        { id: 'q1c1', label: { ko: '빛 에너지', en: 'Light energy' }, points: 2, rate: .95, keywords: ['빛', '햇볕', '태양', 'light', 'sun'],
+          tip: { ko: '광합성에 필요한 에너지(빛)를 써 주세요.', en: 'Mention the energy photosynthesis needs (light).' } },
+        { id: 'q1c2', label: { ko: '이산화탄소', en: 'Carbon dioxide' }, points: 2, rate: .85, keywords: ['이산화탄소', '탄산가스', 'co2', 'carbon dioxide'],
+          tip: { ko: '잎이 공기 중에서 받아들이는 기체(이산화탄소)를 써 주세요.', en: 'Mention the gas leaves take in from the air (carbon dioxide).' } },
+        { id: 'q1c3', label: { ko: '물', en: 'Water' }, points: 2, rate: .9, keywords: ['^물', '수분', 'water', 'h2o'],
+          tip: { ko: '뿌리로 흡수하는 물도 필요해요.', en: 'Plants also need the water taken up by their roots.' } },
+        { id: 'q1c4', label: { ko: '포도당(양분)', en: 'Glucose (food)' }, points: 2, rate: .72, keywords: ['포도당', '녹말', '양분', '당분', 'glucose', 'sugar', 'starch'],
+          tip: { ko: '광합성으로 만들어지는 양분(포도당)을 써 주세요.', en: 'Mention the food photosynthesis makes (glucose).' } },
+        { id: 'q1c5', label: { ko: '산소', en: 'Oxygen' }, points: 2, rate: .48, keywords: ['산소', 'oxygen', '^o2'],
+          tip: { ko: '포도당과 함께 만들어지는 기체(산소)도 써 주세요.', en: 'Also mention the gas produced along with glucose (oxygen).' } }
+      ],
+      sample: { ko: '광합성에는 빛 에너지와 이산화탄소, 물이 필요하고, 그 결과 포도당이 만들어진다.', en: 'A plant needs light, carbon dioxide and water, and photosynthesis makes glucose.' }
+    },
+    {
+      id: 'q2',
+      unit: { ko: '교재 4단원 · 물질의 상태 변화', en: 'Textbook Unit 4 · Changes of State' },
+      text: { ko: '물이 ‘기화’한다는 것이 무슨 뜻인지 설명하고, 생활 속에서 볼 수 있는 예를 하나 쓰시오.', en: 'Explain what it means when water “vaporizes,” and give one example from everyday life.' },
+      rubric: [
+        { id: 'q2c1', label: { ko: '액체 → 기체로 변함', en: 'Liquid turns into gas' }, points: 4, rate: .9, keywords: ['기체', '수증기', 'gas', 'vapor', 'vapour', 'steam'],
+          tip: { ko: '물이 어떤 상태에서 어떤 상태로 바뀌는지(액체 → 기체) 써 주세요.', en: 'Say which state changes into which (liquid → gas).' } },
+        { id: 'q2c2', label: { ko: '열을 흡수함', en: 'Absorbs heat' }, points: 3, rate: .55, keywords: ['흡수', '열을 얻', '열을 받', 'absorb', 'takes in heat', 'gains heat'],
+          tip: { ko: '기화할 때 주변의 열을 흡수한다는 점을 함께 써 주세요.', en: 'Add that water absorbs heat from its surroundings when it vaporizes.' } },
+        { id: 'q2c3', label: { ko: '생활 속 예', en: 'Everyday example' }, points: 3, rate: .85, keywords: ['빨래', '젖은', '끓', '땀', '웅덩이', '어항', 'laundry', 'clothes', 'boil', 'sweat', 'puddle'],
+          tip: { ko: '젖은 빨래가 마르는 것처럼 생활 속 예를 하나 들어 주세요.', en: 'Give an everyday example, like wet laundry drying.' } }
+      ],
+      sample: { ko: '액체인 물이 열을 흡수해서 기체인 수증기로 변하는 것이다. 예를 들어 젖은 빨래가 마르는 것이 기화이다.', en: 'Liquid water absorbs heat and turns into water vapor, a gas. For example, wet laundry dries in the sun.' }
+    },
+    {
+      id: 'q3',
+      unit: { ko: '교재 2단원 · 광합성에 영향을 주는 요인', en: 'Textbook Unit 2 · Factors Affecting Photosynthesis' },
+      text: { ko: '온도가 높아질수록 광합성은 계속 빨라질까요? 그렇게 생각한 까닭과 함께 쓰시오.', en: 'Does photosynthesis keep getting faster as the temperature rises? Explain your reasoning.' },
+      rubric: [
+        { id: 'q3c1', label: { ko: '일정 온도까지만 빨라짐', en: 'Faster only up to a point' }, points: 3, rate: .7, keywords: ['아니', '일정', '적정', '최적', '어느 정도', '까지만', '^no', 'not always', 'up to', 'optimal', 'a certain'],
+          tip: { ko: '처음엔 빨라지지만 일정 온도까지만 그렇다는 점을 써 주세요.', en: 'Say it speeds up only until a certain temperature.' } },
+        { id: 'q3c2', label: { ko: '너무 높으면 느려짐', en: 'Slows down when too hot' }, points: 3, rate: .75, keywords: ['느려', '감소', '줄어', '떨어', '멈', 'slow', 'decrease', 'drop', 'decline', 'stop'],
+          tip: { ko: '온도가 너무 높으면 오히려 느려진다는 점을 써 주세요.', en: 'Say it actually slows down when it gets too hot.' } },
+        { id: 'q3c3', label: { ko: '까닭: 효소가 열에 약함', en: 'Reason: heat damages enzymes' }, points: 4, rate: .35, keywords: ['효소', '변성', '단백질', 'enzyme', 'denature', 'protein'],
+          tip: { ko: '까닭으로 ‘광합성을 돕는 효소가 높은 열에 약하다’는 점을 써 주세요.', en: 'For the reason, explain that the enzymes driving photosynthesis are damaged by high heat.' } }
+      ],
+      sample: { ko: '아니다. 어느 정도까지는 빨라지지만 온도가 너무 높아지면 오히려 광합성이 느려진다.', en: 'No. It speeds up to a point, but if it gets too hot, photosynthesis slows down.' }
+    }
+  ]
+};
+
+/* 가짜 응시자 (실존 인물 아님) */
+const FAKE_TAKERS = [
+  { id: 's01', name: '김하늘', lang: 'ko', at: '11/02 09:12' },
+  { id: 's02', name: '이서준', lang: 'ko', at: '11/02 09:15' },
+  { id: 's03', name: '박지우', lang: 'ko', at: '11/02 09:18' },
+  { id: 's04', name: 'Emma Lee', lang: 'en', at: '11/02 09:20' },
+  { id: 's05', name: '최민서', lang: 'ko', at: '11/02 09:21' },
+  { id: 's06', name: '정예린', lang: 'ko', at: '11/02 09:24', review: true },
+  { id: 's07', name: 'Liam Park', lang: 'en', at: '11/02 09:26' },
+  { id: 's08', name: '강도윤', lang: 'ko', at: '11/02 09:27' },
+  { id: 's09', name: '조하은', lang: 'ko', at: '11/02 09:31' },
+  { id: 's10', name: '윤시우', lang: 'ko', at: '11/02 09:33' },
+  { id: 's11', name: 'An Nguyen', lang: 'en', at: '11/02 09:35', review: true },
+  { id: 's12', name: '한소율', lang: 'ko', at: '11/02 09:38' }
+];
+
+const sv = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const ICON = {
+  build: sv('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>'),
+  take: sv('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/>'),
+  result: sv('<circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.8 2.8L16 9.5"/>'),
+  report: sv('<path d="M3 21h18"/><path d="M6 17v-5"/><path d="M11 17V7"/><path d="M16 17v-8"/><path d="M21 17v-3"/>'),
+  check: sv('<path d="m5 12.5 4.5 4.5L19 7.5"/>'),
+  alert: sv('<path d="M12 7v6"/><path d="M12 17h.01"/>'),
+  info: sv('<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/>'),
+  eye: sv('<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>'),
+  spark: sv('<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/>'),
+  book: sv('<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5Z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>'),
+  download: sv('<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>')
+};
+
+/* ───────── 도우미 ───────── */
+const $ = (s, el = document) => el.querySelector(s);
+const clone = o => JSON.parse(JSON.stringify(o));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const sum = (a, f = x => x) => a.reduce((s, x) => s + f(x), 0);
+const pad = n => String(n).padStart(2, '0');
+const uid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+const viewFromHash = () => { const v = location.hash.slice(1); return VIEWS.includes(v) ? v : 'build'; };
+
+let state = load();
+const tr = () => I18N[state.lang];
+const L = o => (o ? (o[state.lang] || o.ko || o.en || '') : '');
+const qMax = q => sum(q.rubric, c => +c.points || 0);
+const examTotal = () => sum(state.exam.questions, qMax);
+const findQ = id => state.exam.questions.find(q => q.id === id);
+const tipOf = c => L(c.tip) || tr().tipDefault(L(c.label));
+
+function load() {
+  const base = { lang: 'ko', exam: clone(SEED_EXAM), answers: {}, taker: '', result: null };
+  try {
+    const s = JSON.parse(localStorage.getItem(STORE) || 'null');
+    if (s && s.exam && Array.isArray(s.exam.questions)) Object.assign(base, s);
+  } catch (e) { /* 저장소를 못 쓰면 처음 상태로 */ }
+  base.view = viewFromHash();
+  base.editing = new Set();
+  return base;
+}
+function save() {
+  try {
+    localStorage.setItem(STORE, JSON.stringify({ lang: state.lang, exam: state.exam, answers: state.answers, taker: state.taker, result: state.result }));
+  } catch (e) { /* 저장 실패해도 화면은 그대로 동작 */ }
+}
+
+/* ───────── 채점 (시연용: 기준표 핵심어 비교) ─────────
+   실제 서비스에선 buildPrompt()로 만든 요청을 AI에 보내고,
+   돌아온 JSON(기준별 점수·근거·피드백·확인 필요 여부)을 같은 모양으로 화면에 그린다. */
+const reCache = new Map();
+function kwRegex(kw) {
+  if (reCache.has(kw)) return reCache.get(kw);
+  let k = kw.trim(), wordStart = false;
+  if (k.startsWith('^')) { wordStart = true; k = k.slice(1); }
+  const body = [...k].filter(ch => !/\s/.test(ch)).map(ch => ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s*');
+  let re = null;
+  if (body) {
+    try { re = new RegExp((wordStart ? '(?<![\\p{L}\\p{N}])' : '') + body, 'giu'); }
+    catch (e) { re = new RegExp(body, 'gi'); }
+  }
+  reCache.set(kw, re);
+  return re;
+}
+
+function gradeQuestion(q, answer) {
+  const text = (answer || '').trim();
+  const crit = q.rubric.map(c => {
+    const ranges = [], hits = [];
+    for (const kw of c.keywords) {
+      const re = kwRegex(kw);
+      if (!re || !text) continue;
+      re.lastIndex = 0;
+      let m;
+      while ((m = re.exec(text))) {
+        if (!m[0].length) { re.lastIndex++; continue; }
+        ranges.push([m.index, m.index + m[0].length]);
+        hits.push(m[0]);
+      }
+    }
+    const hit = ranges.length > 0;
+    return { id: c.id, hit, earned: hit ? (+c.points || 0) : 0, ranges, hits: [...new Set(hits)] };
+  });
+  const earned = sum(crit, c => c.earned);
+  let review = null;
+  if (text && text.length < 12) review = 'short';
+  else if (text.length >= 30 && earned === 0) review = 'unmatched';
+  return { qid: q.id, text, crit, earned, max: qMax(q), review };
+}
+
+function highlight(text, crit) {
+  const rs = crit.flatMap(c => c.ranges).sort((a, b) => a[0] - b[0] || b[1] - a[1]);
+  const merged = [];
+  for (const r of rs) {
+    const last = merged[merged.length - 1];
+    if (last && r[0] <= last[1]) last[1] = Math.max(last[1], r[1]);
+    else merged.push([r[0], r[1]]);
+  }
+  let out = '', pos = 0;
+  for (const [s, e] of merged) { out += esc(text.slice(pos, s)) + '<mark>' + esc(text.slice(s, e)) + '</mark>'; pos = e; }
+  return out + esc(text.slice(pos));
+}
+
+function buildPrompt(q, text) {
+  const ko = state.lang === 'ko';
+  const crit = q.rubric.map(c => `- ${c.id} · ${L(c.label)} (${c.points}${ko ? '점' : ' pts'})`).join('\n');
+  const schema = '{\n  "criteria": [\n' + q.rubric.map(c => `    {"id": "${c.id}", "score": 0, "evidence": "…"}`).join(',\n') + '\n  ],\n  "feedback": "…",\n  "needs_review": false\n}';
+  return ko
+    ? `[역할]\n너는 서술형 시험 채점 도우미야. 아래 채점 기준표만 근거로 점수를 매겨. 기준마다 학생 답안에서 근거가 된 구절을 그대로 옮겨 적고, 기준에 없는 내용으로는 점수를 주지 마. 확신이 낮으면 needs_review를 true로 해. 피드백은 학생이 응시한 언어로 2문장 이내.\n\n[문제]\n${L(q.text)}\n\n[채점 기준표]\n${crit}\n\n[학생 답안]\n${text || '(빈 답안)'}\n\n[응답 형식 — JSON만]\n${schema}`
+    : `[Role]\nYou grade written test answers. Score only against the rubric below. For each criterion, quote the exact phrase from the student's answer used as evidence, and never give points for anything outside the rubric. If unsure, set needs_review to true. Write feedback in the student's test language, 2 sentences max.\n\n[Question]\n${L(q.text)}\n\n[Rubric]\n${crit}\n\n[Student answer]\n${text || '(empty)'}\n\n[Response — JSON only]\n${schema}`;
+}
+
+/* 가짜 응시자 결과: 이름·기준 id로 정해지는 값이라 새로고침해도 같다 */
+function rand01(s) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  h ^= h >>> 15; h = Math.imul(h, 0x2c1b3c6d); h ^= h >>> 12; h = Math.imul(h, 0x297a2d39); h ^= h >>> 15;
+  return (h >>> 0) / 4294967296;
+}
+function allSubmissions() {
+  const qs = state.exam.questions;
+  const list = FAKE_TAKERS.map(tk => {
+    const perQ = qs.map(q => {
+      const crit = q.rubric.map(c => {
+        const hit = rand01(tk.id + ':' + c.id) < (typeof c.rate === 'number' ? c.rate : 0.7);
+        return { id: c.id, hit, earned: hit ? (+c.points || 0) : 0 };
+      });
+      return { qid: q.id, crit, earned: sum(crit, c => c.earned), max: qMax(q) };
+    });
+    return { name: tk.name, lang: tk.lang, at: tk.at, review: !!tk.review, me: false, perQ, earned: sum(perQ, p => p.earned), max: sum(perQ, p => p.max) };
+  });
+  if (state.result) {
+    const r = state.result;
+    const perQ = qs.map(q => gradeQuestion(q, r.answers[q.id]));
+    list.unshift({ name: r.name, lang: r.lang, at: r.at, review: perQ.some(g => g.review), me: true, perQ, earned: sum(perQ, p => p.earned), max: sum(perQ, p => p.max) });
+  }
+  return list;
+}
+
+/* ───────── 화면: 1. 출제 ───────── */
+function viewBuild() {
+  const t = tr(), ex = state.exam;
+  return `
+  <section class="page-head">
+    <span class="role role-t">${ICON.build.replace('<svg', '<svg width="13" height="13"')}${t.roleTeacher}</span>
+    <h1>${t.buildH}</h1>
+    <p>${t.buildP}</p>
+  </section>
+  <div class="card">
+    <div class="grid2">
+      <label class="field"><span>${t.examTitle} · 한국어</span><input data-f="title.ko" value="${esc(ex.title.ko)}"></label>
+      <label class="field"><span>${t.examTitle} · English</span><input data-f="title.en" value="${esc(ex.title.en)}"></label>
+    </div>
+    <div class="exam-count" id="examCount">${t.qCount(ex.questions.length, examTotal())}</div>
+  </div>
+  ${ex.questions.map((q, i) => qCardBuild(q, i)).join('')}
+  <div class="row-actions">
+    <button type="button" class="btn btn-ghost" data-act="addQ">${t.addQ}</button>
+    <a class="btn btn-primary" href="#take">${t.toTake} →</a>
+  </div>`;
+}
+
+function qCardBuild(q, i) {
+  const t = tr(), editing = state.editing.has(q.id);
+  const head = `<div class="q-head">
+      <span class="q-badge">${t.qLabel(i + 1)}</span>
+      <span class="q-pts" data-qtotal="${q.id}">${t.pts(qMax(q))}</span>
+      <button type="button" class="btn btn-sm ${editing ? 'btn-primary' : 'btn-ghost'}" data-act="toggleEdit" data-q="${q.id}" aria-expanded="${editing}">${editing ? t.done : t.edit}</button>
+    </div>`;
+  if (!editing) {
+    const other = state.lang === 'ko' ? q.text.en : q.text.ko;
+    return `<article class="card" id="card-${q.id}">${head}
+      <p class="q-text">${esc(L(q.text)) || `<span class="muted">${t.emptyQ}</span>`}</p>
+      ${other ? `<p class="q-alt"><b>${state.lang === 'ko' ? 'EN' : 'KO'}</b>${esc(other)}</p>` : ''}
+      <div class="rubric-h">${t.rubricH}</div>
+      <ul class="rubric">${q.rubric.map(c => `<li>
+        <span class="pts-badge">${t.pts(+c.points || 0)}</span>
+        <div><div class="c-label">${esc(L(c.label)) || '—'}</div>
+        <div class="kws">${c.keywords.slice(0, 8).map(k => `<span class="kw">${esc(k)}</span>`).join('')}${c.keywords.length > 8 ? `<span class="kw more">+${c.keywords.length - 8}</span>` : ''}</div></div>
+      </li>`).join('')}</ul>
+    </article>`;
+  }
+  return `<article class="card" id="card-${q.id}">${head}
+    <div class="grid2">
+      <label class="field"><span>${t.qKo}</span><textarea rows="3" data-q="${q.id}" data-f="text.ko">${esc(q.text.ko)}</textarea></label>
+      <label class="field"><span>${t.qEn}</span><textarea rows="3" data-q="${q.id}" data-f="text.en">${esc(q.text.en)}</textarea></label>
+    </div>
+    <div class="rubric-h">${t.rubricH}</div>
+    <p class="help">${t.kwHelp}</p>
+    ${q.rubric.map(c => `<div class="c-edit">
+      <div class="c-edit-grid">
+        <label class="field f-ko"><span>${t.cKo}</span><input data-q="${q.id}" data-c="${c.id}" data-f="label.ko" value="${esc(c.label.ko)}"></label>
+        <label class="field"><span>${t.cEn}</span><input data-q="${q.id}" data-c="${c.id}" data-f="label.en" value="${esc(c.label.en)}"></label>
+        <label class="field"><span>${t.cPts}</span><input type="number" inputmode="numeric" min="0" max="100" data-q="${q.id}" data-c="${c.id}" data-f="points" value="${+c.points || 0}"></label>
+      </div>
+      <label class="field"><span>${t.cKw}</span><input data-q="${q.id}" data-c="${c.id}" data-f="keywords" value="${esc(c.keywords.join(', '))}"></label>
+      <div class="c-edit-foot"><button type="button" class="link-danger" data-act="delC" data-q="${q.id}" data-c="${c.id}">${t.delC}</button></div>
+    </div>`).join('')}
+    <div class="edit-actions">
+      <button type="button" class="btn btn-ghost btn-sm" data-act="addC" data-q="${q.id}">${t.addC}</button>
+      <button type="button" class="link-danger" data-act="delQ" data-q="${q.id}">${t.delQ}</button>
+    </div>
+  </article>`;
+}
+
+/* ───────── 화면: 2. 응시 ───────── */
+function viewTake() {
+  const t = tr(), ex = state.exam, n = ex.questions.length;
+  const head = `<section class="page-head">
+    <span class="role role-s">${ICON.take.replace('<svg', '<svg width="13" height="13"')}${t.roleStudent}</span>
+    <h1>${esc(L(ex.title))}</h1>
+    <p>${t.takeMeta(n, examTotal(), Math.max(5, n * 4))}</p>
+  </section>`;
+  if (!n) return `<div class="narrow">${head}<div class="card empty"><div class="ic">${ICON.build}</div><p>${t.noQ}</p><a class="btn btn-primary" href="#build">${t.nav.build}</a></div></div>`;
+  return `<div class="narrow">${head}
+  <div class="card take-top">
+    <label class="field"><span>${t.name}</span><input id="takerName" autocomplete="off" placeholder="${t.namePh}" value="${esc(state.taker)}"></label>
+    <div class="field"><span>${t.langPick}</span><div class="seg" role="group" aria-label="${t.langPick}">
+      ${['ko', 'en'].map(l => `<button type="button" data-act="lang" data-lang="${l}" aria-pressed="${state.lang === l}">${l === 'ko' ? '한국어' : 'English'}</button>`).join('')}
+    </div></div>
+  </div>
+  ${ex.questions.map((q, i) => {
+    const a = state.answers[q.id] || '';
+    return `<div class="card">
+      <div class="q-take-head"><span class="q-n">${i + 1}</span><p class="q-text">${esc(L(q.text)) || `<span class="muted">${t.emptyQ}</span>`}</p><span class="q-pts">${t.pts(qMax(q))}</span></div>
+      <textarea class="answer" rows="4" data-answer="${q.id}" placeholder="${t.answerPh}" aria-label="${t.qLabel(i + 1)}">${esc(a)}</textarea>
+      <div class="count" data-count="${q.id}">${t.chars(a.length)}</div>
+    </div>`;
+  }).join('')}
+  <div class="row-actions">
+    <button type="button" class="btn btn-ghost" data-act="fill">${t.fillSample}</button>
+    <button type="button" class="btn btn-primary btn-lg" data-act="submit">${t.submit}</button>
+  </div></div>`;
+}
+
+/* ───────── 화면: 3. 결과 ───────── */
+function viewResult() {
+  const t = tr(), r = state.result, qs = state.exam.questions;
+  const head = `<section class="page-head">
+    <span class="role role-s">${ICON.result.replace('<svg', '<svg width="13" height="13"')}${t.roleStudent}</span>
+    <h1>${t.resultH}</h1>
+  </section>`;
+  if (!r) return `<div class="narrow">${head}<div class="card empty"><div class="ic">${ICON.take}</div><p>${t.resultEmpty}</p><a class="btn btn-primary" href="#take">${t.goTake}</a></div></div>`;
+
+  const graded = qs.map(q => gradeQuestion(q, r.answers[q.id]));
+  const earned = sum(graded, g => g.earned), max = sum(graded, g => g.max);
+  const pct = max ? Math.round(earned / max * 100) : 0;
+  const band = pct >= 90 ? 3 : pct >= 70 ? 2 : pct >= 40 ? 1 : 0;
+  const reviews = graded.filter(g => g.review).length;
+  const strong = [], weak = [], study = [];
+  qs.forEach((q, i) => q.rubric.forEach((c, j) => {
+    if (graded[i].crit[j].hit) strong.push(L(c.label));
+    else weak.push({ n: i + 1, label: L(c.label) });
+  }));
+  qs.forEach((q, i) => {
+    if (graded[i].crit.some(c => !c.hit)) {
+      const u = L(q.unit) || t.qLabel(i + 1);
+      if (!study.includes(u)) study.push(u);
+    }
+  });
+  const C = 2 * Math.PI * 52;
+  const gaugeColor = pct >= 70 ? 'var(--primary)' : pct >= 40 ? '#f08c00' : 'var(--warn)';
+
+  return `${head}
+  <div class="card hero">
+    <div class="gauge" role="img" aria-label="${pct} / 100">
+      <svg viewBox="0 0 124 124"><circle cx="62" cy="62" r="52" fill="none" stroke="var(--line-2)" stroke-width="12"/>
+      <circle cx="62" cy="62" r="52" fill="none" stroke="${gaugeColor}" stroke-width="12" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - pct / 100)).toFixed(1)}"/></svg>
+      <div class="num"><b>${pct}</b><small>${t.per100}</small></div>
+    </div>
+    <div class="hero-txt">
+      <div class="meta">${t.myScore} · ${esc(r.name)} · ${t.langName[r.lang] || ''} · ${esc(r.at)}</div>
+      <div class="raw">${t.outOf(earned, max)}</div>
+      <p class="band">${t.band[band]}</p>
+      ${reviews ? `<span class="chip chip-review">${ICON.eye}${t.reviewCount(reviews)}</span>` : ''}
+    </div>
+  </div>
+
+  <div class="sum-grid">
+    <div class="card"><div class="sum-h"><span class="ic" style="background:var(--good)">${ICON.check}</span>${t.strong}</div>
+      ${strong.length ? `<div class="chips">${strong.map(s => `<span class="chip chip-done">${esc(s)}</span>`).join('')}</div>` : `<p class="muted small" style="margin:0">${t.none}</p>`}</div>
+    <div class="card"><div class="sum-h"><span class="ic" style="background:var(--warn)">${ICON.alert}</span>${t.weak}</div>
+      ${weak.length ? `<ul class="sum-list">${weak.map(w => `<li><span class="q">${t.qLabel(w.n)}</span>${esc(w.label)}</li>`).join('')}</ul>` : `<p class="muted small" style="margin:0">${t.none}</p>`}</div>
+    <div class="card"><div class="sum-h"><span class="ic" style="background:var(--primary)">${ICON.book}</span>${t.study}</div>
+      ${study.length ? `<ul class="sum-list">${study.map(s => `<li>${esc(s)}</li>`).join('')}</ul>` : `<p class="muted small" style="margin:0">${t.none}</p>`}</div>
+  </div>
+
+  ${qs.map((q, i) => {
+    const g = graded[i], qp = g.max ? Math.round(g.earned / g.max * 100) : 0;
+    return `<article class="card">
+      <div class="qr-head"><span class="q-badge">${t.qLabel(i + 1)}</span><span class="qr-score">${g.earned}<small> / ${t.pts(g.max)}</small></span></div>
+      <div class="bar ${qp < 50 ? 'warn' : ''}"><i style="width:${qp}%"></i></div>
+      <p class="q-text sm">${esc(L(q.text))}</p>
+      <div class="qr-body">
+        <div>
+          <div class="lbl-sm">${t.myAnswer}</div>
+          ${g.text ? `<div class="answer-view">${highlight(g.text, g.crit)}</div>` : `<div class="answer-view none">${t.noAnswer}</div>`}
+          ${g.review ? `<div class="review-note">${ICON.eye}<span>${g.review === 'short' ? t.reviewShort : t.reviewUnmatched}</span></div>` : ''}
+        </div>
+        <div>
+          <div class="lbl-sm">${t.criteria}</div>
+          <ul class="crit-res">${q.rubric.map((c, j) => {
+            const gc = g.crit[j];
+            return `<li class="${gc.hit ? 'ok' : 'miss'}"><span class="ic">${gc.hit ? ICON.check : ICON.alert}</span>
+              <div class="body"><div class="cr-top"><b>${esc(L(c.label))}</b><span class="cr-pts">${gc.earned} / ${+c.points || 0}</span></div>
+              ${gc.hit ? `<div class="small muted">${t.found}: ${gc.hits.map(h => `“${esc(h)}”`).join(', ')}</div>` : `<div class="small tip">${esc(tipOf(c))}</div>`}</div></li>`;
+          }).join('')}</ul>
+        </div>
+      </div>
+      <details class="prompt"><summary>${t.promptSum}</summary><pre>${esc(buildPrompt(q, g.text))}</pre></details>
+    </article>`;
+  }).join('')}
+
+  <div class="row-actions">
+    <a class="btn btn-ghost" href="#take">${t.retake}</a>
+    <a class="btn btn-primary" href="#report">${t.toReport} →</a>
+  </div>`;
+}
+
+/* ───────── 화면: 4. 분석 ───────── */
+function viewReport() {
+  const t = tr(), qs = state.exam.questions;
+  const head = `<section class="page-head">
+    <span class="role role-t">${ICON.report.replace('<svg', '<svg width="13" height="13"')}${t.roleTeacher}</span>
+    <h1>${t.reportH}</h1>
+    <p>${t.reportP}</p>
+  </section>`;
+  if (!qs.length) return `${head}<div class="card empty"><div class="ic">${ICON.build}</div><p>${t.noQ}</p><a class="btn btn-primary" href="#build">${t.nav.build}</a></div>`;
+
+  const subs = allSubmissions(), n = subs.length;
+  const pctOf = s => (s.max ? s.earned / s.max * 100 : 0);
+  const avg = Math.round(sum(subs, pctOf) / n);
+  const qStats = qs.map((q, i) => {
+    const m = qMax(q), a = sum(subs, s => s.perQ[i].earned) / n;
+    return { q, i, avg: a, max: m, pct: m ? Math.round(a / m * 100) : 0 };
+  });
+  const cStats = qs.flatMap((q, i) => q.rubric.map((c, j) => {
+    const hits = subs.filter(s => s.perQ[i].crit[j] && s.perQ[i].crit[j].hit).length;
+    return { q, i, c, hits, rate: Math.round(hits / n * 100) };
+  })).sort((a, b) => a.rate - b.rate);
+  const reviewN = subs.filter(s => s.review).length;
+  const enN = subs.filter(s => s.lang === 'en').length;
+  const lowQ = [...qStats].sort((a, b) => a.pct - b.pct)[0];
+  const lowC = cStats[0];
+
+  const ai = [t.ai1(avg, t.qLabel(lowQ.i + 1), lowQ.pct)];
+  if (lowC) ai.push(t.ai2(esc(L(lowC.c.label)), n, n - lowC.hits, esc(L(lowC.q.unit) || t.qLabel(lowC.i + 1))));
+  if (reviewN) ai.push(t.ai3(reviewN));
+  if (enN) ai.push(t.ai4(enN));
+
+  return `${head}
+  <div class="kpis">
+    <div class="card kpi"><div class="k">${t.kTakers}</div><div class="v">${t.people(n)}</div></div>
+    <div class="card kpi"><div class="k">${t.kAvg}</div><div class="v">${t.score100(avg)}</div></div>
+    <div class="card kpi"><div class="k">${t.kReview}</div><div class="v" style="color:var(--review)">${t.cases(reviewN)}</div></div>
+    <div class="card kpi"><div class="k">${t.kWeak}</div><div class="v txt">${lowC ? `${esc(L(lowC.c.label))}<br><small>${t.qLabel(lowC.i + 1)} · ${t.achieved(lowC.rate)}</small>` : '—'}</div></div>
+  </div>
+
+  <div class="card ai-card">
+    <h2 class="card-h"><span class="ic">${ICON.spark}</span>${t.aiH}</h2>
+    <ul>${ai.map(x => `<li>${x}</li>`).join('')}</ul>
+  </div>
+
+  <div class="two">
+    <div class="card"><h2 class="card-h">${t.byQ}</h2>
+      ${qStats.map(s => `<div class="hbar"><span class="lbl"><span class="q">${t.qLabel(s.i + 1)}</span>${esc(L(s.q.text))}</span><span class="val">${s.avg.toFixed(1)} / ${s.max}</span><div class="bar ${s.pct < 50 ? 'warn' : ''}"><i style="width:${s.pct}%"></i></div></div>`).join('')}
+    </div>
+    <div class="card"><h2 class="card-h">${t.byC}</h2>
+      ${cStats.map(s => `<div class="hbar"><span class="lbl"><span class="q">${t.qLabel(s.i + 1)}</span>${esc(L(s.c.label))}</span><span class="val">${s.rate}%</span><div class="bar ${s.rate < 50 ? 'warn' : ''}"><i style="width:${s.rate}%"></i></div></div>`).join('')}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="tbl-head"><h2 class="card-h">${t.kTakers} · ${n}</h2>
+      <button type="button" class="btn btn-ghost btn-sm" data-act="export">${ICON.download}${t.exportCsv}</button></div>
+    <table class="tbl">
+      <thead><tr><th>${t.tName}</th><th class="hide-sm">${t.tLang}</th><th class="hide-sm">${t.tAt}</th><th class="t-num">${t.tScore}</th><th>${t.tState}</th></tr></thead>
+      <tbody>${subs.map(s => `<tr class="${s.me ? 'me' : ''}">
+        <td><span class="name">${esc(s.name)}${s.me ? `<span class="chip chip-me">${t.me}</span>` : ''}</span></td>
+        <td class="hide-sm">${t.langName[s.lang] || ''}</td>
+        <td class="hide-sm">${esc(s.at)}</td>
+        <td class="t-num"><b>${s.earned}</b> / ${s.max}</td>
+        <td>${s.review ? `<span class="chip chip-review">${t.sReview}</span>` : `<span class="chip chip-done">${t.sDone}</span>`}</td>
+      </tr>`).join('')}</tbody>
+    </table>
+  </div>`;
+}
+
+/* ───────── 그리기 ───────── */
+function renderChrome() {
+  const t = tr();
+  document.documentElement.lang = state.lang;
+  document.title = `${t.nav[state.view]} · ${t.brand}`;
+  $('#brandName').textContent = t.brand;
+  $('#tabs').setAttribute('aria-label', t.navLabel);
+  $('#bnav').setAttribute('aria-label', t.navLabel);
+  $('#tabs').innerHTML = VIEWS.map((v, i) => `<a class="tab" href="#${v}"${state.view === v ? ' aria-current="page"' : ''}><span class="n">${i + 1}</span>${t.nav[v]}</a>`).join('');
+  $('#bnav').innerHTML = VIEWS.map(v => `<a href="#${v}"${state.view === v ? ' aria-current="page"' : ''}>${ICON[v]}<span>${t.nav[v]}</span></a>`).join('');
+  $('#lang').innerHTML = ['ko', 'en'].map(l => `<button type="button" data-act="lang" data-lang="${l}" aria-pressed="${state.lang === l}">${l.toUpperCase()}</button>`).join('');
+  $('#notice').innerHTML = `${ICON.info}<span>${t.notice}</span>`;
+  $('#foot').innerHTML = `<span>${t.foot}</span><button type="button" class="link" data-act="reset">${t.reset}</button>`;
+}
+function render() {
+  renderChrome();
+  const v = state.view;
+  $('#app').innerHTML = v === 'build' ? viewBuild() : v === 'take' ? viewTake() : v === 'result' ? viewResult() : viewReport();
+}
+
+function updateTotals(qid) {
+  const t = tr(), q = findQ(qid), el = document.querySelector(`[data-qtotal="${qid}"]`);
+  if (q && el) el.textContent = t.pts(qMax(q));
+  const c = $('#examCount');
+  if (c) c.textContent = t.qCount(state.exam.questions.length, examTotal());
+}
+
+/* ───────── 동작 ───────── */
+function submit() {
+  const t = tr();
+  const ov = document.createElement('div');
+  ov.className = 'overlay';
+  ov.setAttribute('role', 'status');
+  ov.setAttribute('aria-live', 'polite');
+  ov.innerHTML = `<div class="ov-card"><div class="spinner"></div><b>${t.grading}</b><ul class="steps">${t.gradingSteps.map(s => `<li><span class="dot"></span>${s}</li>`).join('')}</ul></div>`;
+  document.body.appendChild(ov);
+  const lis = [...ov.querySelectorAll('li')];
+  const step = matchMedia('(prefers-reduced-motion: reduce)').matches ? 120 : 450;
+  lis.forEach((_, i) => setTimeout(() => lis.forEach((x, j) => { x.classList.toggle('ok', j < i); x.classList.toggle('on', j === i); }), i * step));
+  setTimeout(() => lis.forEach(x => { x.classList.add('ok'); x.classList.remove('on'); }), lis.length * step);
+  setTimeout(() => {
+    const d = new Date();
+    state.result = {
+      name: state.taker.trim() || t.meDefault,
+      lang: state.lang,
+      at: `${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`,
+      answers: { ...state.answers }
+    };
+    save();
+    ov.remove();
+    if (location.hash === '#result') { render(); window.scrollTo(0, 0); } else location.hash = '#result';
+  }, lis.length * step + 250);
+}
+
+function exportCsv() {
+  const t = tr(), qs = state.exam.questions, subs = allSubmissions();
+  const rows = [[t.tName, t.tLang, t.tAt, ...qs.map((_, i) => t.qLabel(i + 1)), t.tScore, t.tState]];
+  subs.forEach(s => rows.push([s.name, t.langName[s.lang] || '', s.at, ...s.perQ.map(p => p.earned), `${s.earned}/${s.max}`, s.review ? t.sReview : t.sDone]));
+  const csv = '﻿' + rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = 'grading-results.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+function resetDemo(btn) {
+  const t = tr();
+  if (btn.dataset.armed !== '1') {
+    btn.dataset.armed = '1';
+    btn.textContent = t.resetConfirm;
+    setTimeout(() => { if (btn.isConnected) { btn.dataset.armed = ''; btn.textContent = tr().reset; } }, 4000);
+    return;
+  }
+  try { localStorage.removeItem(STORE); } catch (e) { /* 무시 */ }
+  const lang = state.lang;
+  state = load();
+  state.lang = lang;
+  save();
+  if (location.hash !== '#build') location.hash = '#build';
+  state.view = 'build';
+  render();
+  window.scrollTo(0, 0);
+}
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el) return;
+  const { act } = el.dataset, q = el.dataset.q && findQ(el.dataset.q);
+  switch (act) {
+    case 'lang':
+      if (state.lang !== el.dataset.lang) { state.lang = el.dataset.lang; save(); render(); }
+      break;
+    case 'toggleEdit':
+      state.editing.has(q.id) ? state.editing.delete(q.id) : state.editing.add(q.id);
+      render();
+      break;
+    case 'addQ': {
+      const id = uid('q');
+      state.exam.questions.push({ id, unit: { ko: '', en: '' }, text: { ko: '', en: '' }, rubric: [{ id: uid('c'), label: { ko: '', en: '' }, points: 5, keywords: [] }], sample: null });
+      state.editing.add(id);
+      save(); render();
+      const card = document.getElementById('card-' + id);
+      if (card) { card.scrollIntoView({ behavior: 'smooth', block: 'start' }); const f = card.querySelector('textarea'); if (f) f.focus({ preventScroll: true }); }
+      break;
+    }
+    case 'delQ':
+      state.exam.questions = state.exam.questions.filter(x => x !== q);
+      save(); render();
+      break;
+    case 'addC':
+      q.rubric.push({ id: uid('c'), label: { ko: '', en: '' }, points: 2, keywords: [] });
+      save(); render();
+      break;
+    case 'delC':
+      q.rubric = q.rubric.filter(c => c.id !== el.dataset.c);
+      save(); render();
+      break;
+    case 'fill':
+      state.exam.questions.forEach(x => { const s = x.sample && (x.sample[state.lang] || x.sample.ko); if (s) state.answers[x.id] = s; });
+      save(); render();
+      break;
+    case 'submit': submit(); break;
+    case 'export': exportCsv(); break;
+    case 'reset': resetDemo(el); break;
+  }
+});
+
+document.addEventListener('input', e => {
+  const el = e.target;
+  if (el.dataset.answer) {
+    state.answers[el.dataset.answer] = el.value;
+    const c = document.querySelector(`[data-count="${el.dataset.answer}"]`);
+    if (c) c.textContent = tr().chars(el.value.length);
+    save();
+    return;
+  }
+  if (el.id === 'takerName') { state.taker = el.value; save(); return; }
+  const f = el.dataset.f;
+  if (!f) return;
+  const q = el.dataset.q && findQ(el.dataset.q);
+  const target = !q ? state.exam : el.dataset.c ? q.rubric.find(c => c.id === el.dataset.c) : q;
+  if (!target) return;
+  if (f === 'keywords') target.keywords = el.value.split(',').map(s => s.trim()).filter(Boolean);
+  else if (f === 'points') { target.points = Math.max(0, Math.min(100, parseInt(el.value, 10) || 0)); updateTotals(q.id); }
+  else { const [k, l] = f.split('.'); target[k][l] = el.value; }
+  save();
+});
+
+window.addEventListener('hashchange', () => { state.view = viewFromHash(); render(); window.scrollTo(0, 0); });
+
+render();
+})();
+</script>
+</body>
+</html>
