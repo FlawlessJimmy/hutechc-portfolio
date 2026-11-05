@@ -75,7 +75,7 @@
   function init() {
     window.scrollTo(0, 0);
     const heroSplit = new SplitText('.hero-title .line', { type: 'chars' });
-    gsap.set(heroSplit.chars, { yPercent: 115 });
+    gsap.set(heroSplit.chars, { yPercent: 145 });
     gsap.set('.hero-eyebrow, .hero-sub, .hero-scroll', { y: 24, opacity: 0 });
     const num = $('.loader .num'), bar = $('.loader-bar i'), c = { v: 0 };
     gsap.timeline()
@@ -235,7 +235,29 @@
 
     /* CTA */
     const ctaSplit = new SplitText('.cta-title .line', { type: 'chars' });
-    gsap.from(ctaSplit.chars, { yPercent: 115, duration: 1.2, ease: 'expo.out', stagger: 0.025, scrollTrigger: { trigger: '.cta', start: 'top 65%' } });
+    gsap.from(ctaSplit.chars, { yPercent: 145, duration: 1.2, ease: 'expo.out', stagger: 0.025, scrollTrigger: { trigger: '.cta', start: 'top 65%' } });
     gsap.from('.cta-btn', { y: 30, opacity: 0, duration: 1, ease: 'power3.out', scrollTrigger: { trigger: '.cta', start: 'top 55%' } });
   }
+})();
+
+/* On-device 탭 보조: AI 스크립트가 실행되지 않은 경우(파일로 직접 열기 · 오래된 브라우저)에도 탭은 넘어가게 합니다. */
+(() => {
+  const root = document.querySelector('.ondevice');
+  if (!root) return;
+  const tabs = [...root.querySelectorAll('.od-tab')];
+  const panels = [...root.querySelectorAll('.od-panel')];
+  tabs.forEach((b) => b.addEventListener('click', () => {
+    if (window.__odReady) return; // 정상 실행 중이면 ondevice.js가 처리합니다.
+    tabs.forEach((x) => x.classList.toggle('is-on', x === b));
+    panels.forEach((p) => p.classList.toggle('is-on', p.dataset.panel === b.dataset.tab));
+    if (window.ScrollTrigger) ScrollTrigger.refresh();
+  }));
+  const warn = () => {
+    if (window.__odReady) return;
+    const msg = location.protocol === 'file:'
+      ? '파일로 직접 열면 AI가 동작하지 않습니다 · 사이트 주소(flawlessjimmy.github.io/hutechc-portfolio)로 열어 주세요.'
+      : '이 브라우저에서는 AI 시연을 불러오지 못했습니다 · 최신 Chrome에서 열어 주세요.';
+    root.querySelectorAll('.od-load').forEach((el) => { el.classList.add('is-error'); el.querySelector('.od-load-txt').textContent = msg; });
+  };
+  if (document.readyState === 'complete') setTimeout(warn, 1500); else window.addEventListener('load', () => setTimeout(warn, 1500));
 })();

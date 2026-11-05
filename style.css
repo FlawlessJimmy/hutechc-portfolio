@@ -58,7 +58,7 @@ h2.kr { letter-spacing: -.03em; line-height: 1.22; }
 .hero { min-height: 100svh; padding: 120px var(--pad) 9vh; display: flex; flex-direction: column; justify-content: flex-end; }
 .hero-eyebrow { font-size: 14px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin-bottom: 22px; }
 .hero-title { font-size: clamp(60px, 11.5vw, 196px); font-weight: 700; line-height: .86; letter-spacing: -.055em; }
-.hero-title .line, .cta-title .line { display: block; overflow: hidden; padding-bottom: .06em; }
+.hero-title .line, .cta-title .line { display: block; overflow: hidden; padding-bottom: .24em; margin-bottom: -.18em; }
 .accent { color: var(--mint); }
 .hero-bottom { display: flex; justify-content: space-between; align-items: flex-end; gap: 32px; margin-top: 36px; }
 .hero-sub { font-size: clamp(16px, 1.3vw, 20px); line-height: 1.75; color: #b7c4c9; max-width: 560px; }

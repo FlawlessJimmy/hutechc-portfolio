@@ -1,6 +1,6 @@
 // 온디바이스 AI 시연 화면 제어
 const root = document.querySelector('.ondevice');
-if (root) init();
+if (root) { window.__odReady = true; init(); }
 
 function init() {
   const $ = (s, el = root) => el.querySelector(s);
@@ -90,7 +90,7 @@ function init() {
     { id: 'co2', label: '이산화탄소', pts: 2, kw: ['이산화탄소', '탄산가스'], sym: [/co2/, 'CO₂'], refs: ['이산화탄소가 필요하다', '공기 중의 이산화탄소를 흡수한다'], tip: '잎으로 들어오는 기체(이산화탄소)' },
     { id: 'water', label: '물', pts: 2, kw: ['^물'], sym: [/h2o/, 'H₂O'], refs: ['물이 필요하다', '뿌리로 물을 흡수한다'], tip: '뿌리로 흡수하는 물' },
     { id: 'sugar', label: '포도당 · 양분', pts: 2, kw: ['포도당', '녹말'], refs: ['포도당이 만들어진다', '양분이 만들어진다'], tip: '만들어지는 양분(포도당)' },
-    { id: 'o2', label: '산소', pts: 2, kw: ['산소'], sym: [/(?<!c)o2/, 'O₂'], refs: ['산소가 만들어진다', '산소가 밖으로 나온다'], tip: '밖으로 나오는 기체(산소)' },
+    { id: 'o2', label: '산소', pts: 2, kw: ['산소'], sym: [/(^|[^c])o2/, 'O₂'], refs: ['산소가 만들어진다', '산소가 밖으로 나온다'], tip: '밖으로 나오는 기체(산소)' },
   ];
   const STUDENTS = [
     { id: 'A', tag: '모범형', text: '광합성에는 빛 에너지와 이산화탄소, 물이 필요하고, 그 결과 포도당과 산소가 만들어진다.' },
@@ -166,7 +166,8 @@ function init() {
       if (hit[r.id] || !r.sym) return;
       const m = compact.match(r.sym[0]);
       if (!m) return;
-      const s = map[m.index], e = map[m.index + m[0].length - 1] + 1, word = raw.slice(s, e);
+      const at = m.index + (m[1] || '').length, len = m[0].length - (m[1] || '').length;
+      const s = map[at], e = map[at + len - 1] + 1, word = raw.slice(s, e);
       hit[r.id] = { how: 'sym', word }; spans.push({ s, e, type: 'kw', tip: `${r.sym[1]} = ${r.label}` });
       symFix.push(`${word} → ${r.label}`);
     });
